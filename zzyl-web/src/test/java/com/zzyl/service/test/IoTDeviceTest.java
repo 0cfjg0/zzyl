@@ -1,6 +1,6 @@
 package com.zzyl.service.test;
 
-import com.alibaba.fastjson.JSON;
+import cn.hutool.json.JSONUtil;
 import com.aliyun.iot20180120.Client;
 import com.aliyun.iot20180120.models.QueryProductListRequest;
 import com.aliyun.iot20180120.models.QueryProductListResponse;
@@ -40,6 +40,6 @@ public class IoTDeviceTest {
         QueryProductListResponse queryProductListResponse = client.queryProductList(queryProductListRequest);
 
         //打印数据
-        System.out.println(JSON.toJSONString(queryProductListResponse.getBody().getData()));
+        System.out.println(JSONUtil.toJsonStr(queryProductListResponse.getBody().getData()));
     }
 }
