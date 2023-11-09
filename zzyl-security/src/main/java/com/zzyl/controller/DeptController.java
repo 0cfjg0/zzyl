@@ -44,7 +44,7 @@ public class DeptController {
             "deptDto.remark",
             "deptDto.sortNo",
             "deptDto.parentDeptNo"})
-    public ResponseResult<DeptVo> createDept(@RequestBody DeptDto deptDto) {
+    public ResponseResult<Boolean> createDept(@RequestBody DeptDto deptDto) {
         return ResponseResult.success(deptService.createDept(deptDto));
     }
 

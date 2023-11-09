@@ -27,7 +27,7 @@ public class ApplicationsServiceImpl implements ApplicationsService {
      * @return
      */
     @Override
-    public ResponseResult<ApplicationsVo> selectByPage(ApplicationsDto applicationsDto) {
+    public ResponseResult<PageResponse<PendingTasks>> selectByPage(ApplicationsDto applicationsDto) {
         PendingTasksDto pendingTasksDto = BeanUtil.toBean(applicationsDto, PendingTasksDto.class);
         PageResponse<PendingTasks> pendingTasksPageResponse = actFlowCommService.myTaskInfoList(pendingTasksDto);
         return ResponseResult.success(pendingTasksPageResponse);

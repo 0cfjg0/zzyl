@@ -1,5 +1,6 @@
 package com.zzyl.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -40,8 +41,7 @@ public class NursingProjectServiceImpl implements NursingProjectService {
      */
     @Override
     public void add(NursingProjectDto nursingProjectDTO) {
-        NursingProject nursingProject = new NursingProject();
-        BeanUtils.copyProperties(nursingProjectDTO, nursingProject);
+        NursingProject nursingProject = BeanUtil.toBean(nursingProjectDTO, NursingProject.class);
         nursingProjectMapper.insert(nursingProject); // 插入护理项目
     }
 

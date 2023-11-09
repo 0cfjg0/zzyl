@@ -1,8 +1,10 @@
 package com.zzyl.service;
 
 
+import com.zzyl.base.PageResponse;
 import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.ApplicationsDto;
+import com.zzyl.entity.PendingTasks;
 import com.zzyl.vo.ApplicationsVo;
 
 /**
@@ -20,6 +22,6 @@ public interface ApplicationsService {
      * @param applicationsDto
      * @return
      */
-    ResponseResult<ApplicationsVo> selectByPage(ApplicationsDto applicationsDto);
+    ResponseResult<PageResponse<PendingTasks>> selectByPage(ApplicationsDto applicationsDto);
 
 }

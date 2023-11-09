@@ -44,7 +44,7 @@ public class ResourceController {
             , "resourceDto.resourceName"
             , "resourceDto.resourceType"
             , "resourceDto.sortNo"})
-    public ResponseResult<ResourceVo> createResource(@RequestBody ResourceDto resourceDto) {
+    public ResponseResult<Boolean> createResource(@RequestBody ResourceDto resourceDto) {
         return ResponseResult.success(resourceService.createResource(resourceDto));
     }
 
