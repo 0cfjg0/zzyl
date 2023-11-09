@@ -32,7 +32,7 @@ public class NursingTaskController {
     @GetMapping
     @ApiOperation("根据ID获取护理任务")
     @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Long", paramType = "query")
-    ResponseResult<NursingTask> getById(@RequestParam("taskId") Long taskId) {
+    ResponseResult<NursingTaskVo> getById(@RequestParam("taskId") Long taskId) {
         return ResponseResult.success(nursingTaskService.selectByPrimaryKey(taskId));
     }
 
@@ -103,7 +103,7 @@ public class NursingTaskController {
             @ApiImplicitParam(name = "endTime", value = "结束时间", dataType = "long", paramType = "query"),
             @ApiImplicitParam(name = "status", value = "状态  1待执行 2已执行 3已关闭 ", dataType = "Integer", paramType = "query")
     })
-    ResponseResult<PageResponse<NursingTask>> getTasksByPage(@RequestParam(name = "pageNum", defaultValue = "1") int pageNum, @RequestParam(name = "pageSize", defaultValue = "10") int pageSize, @Param("elderName") String elderName, @Param("nurseId") Long nurseId, @Param("projectId") Long projectId, @Param("startTime") Long startTime, @Param("endTime") Long endTime, @Param("status") Integer status) {
+    ResponseResult<PageResponse<NursingTaskVo>> getTasksByPage(@RequestParam(name = "pageNum", defaultValue = "1") int pageNum, @RequestParam(name = "pageSize", defaultValue = "10") int pageSize, @Param("elderName") String elderName, @Param("nurseId") Long nurseId, @Param("projectId") Long projectId, @Param("startTime") Long startTime, @Param("endTime") Long endTime, @Param("status") Integer status) {
         PageResponse<NursingTaskVo> tasksByPage = nursingTaskService.getTasksByPage(pageNum, pageSize, elderName, nurseId, projectId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime), status);
         return ResponseResult.success(tasksByPage);
     }

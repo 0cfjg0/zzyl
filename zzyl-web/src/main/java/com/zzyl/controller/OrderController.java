@@ -59,7 +59,7 @@ public class OrderController {
 
     @ApiOperation("分页")
     @GetMapping("/search")
-    public ResponseResult<OrderVo> searchOrders(
+    public ResponseResult<PageResponse<OrderVo>> searchOrders(
             @RequestParam(value = "status", required = false) Integer status,
             @RequestParam(value = "orderNo", required = false) String orderNo,
             @RequestParam(value = "elderlyName", required = false) String elderlyName,

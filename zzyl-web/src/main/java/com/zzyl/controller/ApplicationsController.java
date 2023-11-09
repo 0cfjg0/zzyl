@@ -1,8 +1,10 @@
 package com.zzyl.controller;
 
 
+import com.zzyl.base.PageResponse;
 import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.ApplicationsDto;
+import com.zzyl.entity.PendingTasks;
 import com.zzyl.service.ApplicationsService;
 import com.zzyl.utils.UserThreadLocal;
 import com.zzyl.vo.ApplicationsVo;
@@ -32,7 +34,7 @@ public class ApplicationsController {
 
     @PostMapping("/selectByPage")
     @ApiOperation(value = "查询我的申请")
-    public ResponseResult<ApplicationsVo> selectByPage(@RequestBody ApplicationsDto applicationsDto){
+    public ResponseResult<PageResponse<PendingTasks>> selectByPage(@RequestBody ApplicationsDto applicationsDto){
 
         Long mgtUserId = UserThreadLocal.getMgtUserId();
         applicationsDto.setApplicatId(mgtUserId);
