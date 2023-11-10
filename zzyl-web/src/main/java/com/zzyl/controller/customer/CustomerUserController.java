@@ -15,15 +15,16 @@ import com.zzyl.utils.ObjectUtil;
 import com.zzyl.vo.DeviceDataVo;
 import com.zzyl.vo.LoginVo;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -35,26 +36,21 @@ import java.io.IOException;
 @RequestMapping("/customer/user")
 public class CustomerUserController extends BaseController {
 
-    @Autowired
+    @Resource
     private MemberService memberService;
-
     @Resource
     private DeviceDataService deviceDataService;
-
     @Resource
     private Client client;
 
     @Value("${zzyl.aliyun.iotInstanceId}")
     private String iotInstanceId;
 
-    /**
-     * C端用户登录--微信登录
-     *
-     * @param userLoginRequestDto 用户登录信息
-     * @return 登录结果
-     */
     @PostMapping("/login")
-    @ApiOperation("登录")
+    @ApiOperation("微信小程序登录")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userLoginRequestDto", value = "用户登录信息", required = true)
+    })
     public ResponseResult<LoginVo> login(@RequestBody UserLoginRequestDto userLoginRequestDto) throws IOException {
         LoginVo login = memberService.login(userLoginRequestDto);
         return success(login);
@@ -62,29 +58,38 @@ public class CustomerUserController extends BaseController {
 
     @GetMapping("/get-page")
     @ApiOperation(value = "获取设备数据分页结果", notes = "接收包含分页信息的请求参数，返回一个包含分页数据的Page<DeviceDataDto>对象")
-    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceDataPage(
-            @ApiParam(value = "页码", required = true) @RequestParam("pageNum") Integer pageNum,
-            @ApiParam(value = "每页大小", required = true) @RequestParam("pageSize") Integer pageSize,
-            @ApiParam(value = "设备名称") @RequestParam(value = "deviceName", required = false) String deviceName,
-            @ApiParam(value = "接入位置") @RequestParam(value = "accessLocation", required = false) String accessLocation,
-            @ApiParam(value = "位置类型") @RequestParam(value = "accessLocation", required = false) Integer locationType,
-            @ApiParam(value = "功能ID") @RequestParam(value = "functionId", required = false) String functionId,
-            @ApiParam(value = "开始时间")  @RequestParam(required = false) Long startTime,
-            @ApiParam(value = "结束时间")  @RequestParam(required = false) Long endTime,
-            @ApiParam(value = "状态 0 正常 1 异常 2待处理 3已处理")  @RequestParam(required = false) Integer status) {
-        return ResponseResult.success(deviceDataService.getDeviceDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType, functionId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime)));
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "pageNum", value = "页码", required = true),
+            @ApiImplicitParam(name = "pageSize", value = "每页大小", required = true),
+            @ApiImplicitParam(name = "deviceName", value = "设备名称"),
+            @ApiImplicitParam(name = "accessLocation", value = "接入位置"),
+            @ApiImplicitParam(name = "locationType", value = "位置类型"),
+            @ApiImplicitParam(name = "functionId", value = "功能ID"),
+            @ApiImplicitParam(name = "startTime", value = "开始时间"),
+            @ApiImplicitParam(name = "endTime", value = "结束时间"),
+            @ApiImplicitParam(name = "status", value = "状态 0 正常 1 异常 2待处理 3已处理"),
+    })
+    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceDataPage(@RequestParam("pageNum") Integer pageNum,
+                                                                        @RequestParam("pageSize") Integer pageSize,
+                                                                        @RequestParam(value = "deviceName", required = false) String deviceName,
+                                                                        @RequestParam(value = "accessLocation", required = false) String accessLocation,
+                                                                        @RequestParam(value = "locationType", required = false) Integer locationType,
+                                                                        @RequestParam(value = "functionId", required = false) String functionId,
+                                                                        @RequestParam(value = "startTime", required = false) Long startTime,
+                                                                        @RequestParam(value = "endTime", required = false) Long endTime,
+                                                                        @RequestParam(value = "status", required = false) Integer status) {
+        LocalDateTime startLocalDateTime = ObjectUtil.isEmpty(startTime) ? null : LocalDateTimeUtil.of(startTime);
+        LocalDateTime endLocalDateTime = ObjectUtil.isEmpty(endTime) ? null : LocalDateTimeUtil.of(endTime);
+        PageResponse<DeviceDataVo> pageResponse = deviceDataService.getDeviceDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType,
+                functionId, startLocalDateTime, endLocalDateTime);
+        return ResponseResult.success(pageResponse);
     }
-
-    /*@PostMapping("/QueryThingModelPublished")
-    @ApiOperation(value = "查看指定产品的已发布物模型中的功能定义详情", notes = "查看指定产品的已发布物模型中的功能定义详情")
-    public ResponseResult queryThingModelPublished(@RequestBody QueryThingModelPublishedRequest request) throws Exception {
-        request.setIotInstanceId("iot-06z00frq8umvkx2");
-        QueryThingModelPublishedResponse response = client.queryThingModelPublished(request);
-        return ResponseResult.success(response.getBody().getData());
-    }*/
 
     @PostMapping("/QueryDevicePropertyStatus")
     @ApiOperation(value = "查询指定设备的状态", notes = "查询指定设备的状态")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "request", value = "状态请求参数", required = true)
+    })
     public ResponseResult<QueryDevicePropertyStatusResponseBody.QueryDevicePropertyStatusResponseBodyData> QueryDevicePropertyStatus(@RequestBody QueryDevicePropertyStatusRequest request) throws Exception {
         request.setIotInstanceId(iotInstanceId);
         QueryDevicePropertyStatusResponse deviceStatus = client.queryDevicePropertyStatus(request);
@@ -94,17 +99,31 @@ public class CustomerUserController extends BaseController {
 
     @GetMapping("/get-week-page")
     @ApiOperation(value = "按周获取设备数据分页结果", notes = "接收包含分页信息的请求参数，返回一个包含分页数据的Page<DeviceDataDto>对象")
-    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceWeekDataPage(
-            @ApiParam(value = "页码", required = true) @RequestParam("pageNum") Integer pageNum,
-            @ApiParam(value = "每页大小", required = true) @RequestParam("pageSize") Integer pageSize,
-            @ApiParam(value = "设备名称") @RequestParam(value = "deviceName", required = false) String deviceName,
-            @ApiParam(value = "接入位置") @RequestParam(value = "accessLocation", required = false) String accessLocation,
-            @ApiParam(value = "位置类型") @RequestParam(value = "accessLocation", required = false) Integer locationType,
-            @ApiParam(value = "功能ID") @RequestParam(value = "functionId", required = false) String functionId,
-            @ApiParam(value = "开始时间")  @RequestParam(required = false) Long startTime,
-            @ApiParam(value = "结束时间")  @RequestParam(required = false) Long endTime,
-            @ApiParam(value = "状态 0 正常 1 异常 2待处理 3已处理")  @RequestParam(required = false) Integer status) {
-        return ResponseResult.success(deviceDataService.getDeviceWeekDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType, functionId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime)));
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "pageNum", value = "页码", required = true),
+            @ApiImplicitParam(name = "pageSize", value = "每页大小", required = true),
+            @ApiImplicitParam(name = "deviceName", value = "设备名称"),
+            @ApiImplicitParam(name = "accessLocation", value = "接入位置"),
+            @ApiImplicitParam(name = "locationType", value = "位置类型"),
+            @ApiImplicitParam(name = "functionId", value = "功能ID"),
+            @ApiImplicitParam(name = "startTime", value = "开始时间"),
+            @ApiImplicitParam(name = "endTime", value = "结束时间"),
+            @ApiImplicitParam(name = "status", value = "状态 0 正常 1 异常 2待处理 3已处理"),
+    })
+    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceWeekDataPage(@RequestParam("pageNum") Integer pageNum,
+                                                                            @RequestParam("pageSize") Integer pageSize,
+                                                                            @RequestParam(value = "deviceName", required = false) String deviceName,
+                                                                            @RequestParam(value = "accessLocation", required = false) String accessLocation,
+                                                                            @RequestParam(value = "locationType", required = false) Integer locationType,
+                                                                            @RequestParam(value = "functionId", required = false) String functionId,
+                                                                            @RequestParam(value = "startTime", required = false) Long startTime,
+                                                                            @RequestParam(value = "endTime", required = false) Long endTime,
+                                                                            @RequestParam(value = "status", required = false) Integer status) {
+        LocalDateTime startLocalDateTime = ObjectUtil.isEmpty(startTime) ? null : LocalDateTimeUtil.of(startTime);
+        LocalDateTime endLocalDateTime = ObjectUtil.isEmpty(endTime) ? null : LocalDateTimeUtil.of(endTime);
+        PageResponse<DeviceDataVo> pageResponse = deviceDataService.getDeviceWeekDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType,
+                functionId, startLocalDateTime, endLocalDateTime);
+        return ResponseResult.success(pageResponse);
     }
 
 }

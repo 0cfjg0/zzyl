@@ -16,15 +16,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
+
 /**
  * 合同 Controller
  */
 @RestController
 @RequestMapping("/customer/contract")
 @Api(tags = "客户合同")
-public class CostomerContractController {
+public class CustomerContractController {
 
-    @Autowired
+    @Resource
     private ContractService contractService;
 
     /**

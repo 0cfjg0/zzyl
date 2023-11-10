@@ -24,9 +24,9 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 @Api(tags = "客户订单")
@@ -35,21 +35,17 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CustomOrderController {
 
-    private final OrderService orderService;
+    @Resource
+    private OrderService orderService;
 
-    @Autowired
+    @Resource
     private NursingProjectService nursingProjectService;
 
-    @Autowired
-    CommonPayHandler wechatCommonPayHandler;
+    @Resource
+    private CommonPayHandler wechatCommonPayHandler;
 
-    @Autowired
-    RedissonClient redissonClient;
-
-    @Autowired
-    public CustomOrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+    @Resource
+    private RedissonClient redissonClient;
 
     @ApiOperation("下单")
     @PostMapping
@@ -143,18 +139,18 @@ public class CustomOrderController {
     }
 
     /***
-     * @description 申请退款接口
+     * 申请退款接口
      * 当交易发生之后一段时间内，由于买家或者卖家的原因需要退款时，卖家可以通过退款接口将支付款退还给买家，
      * 将在收到退款请求并且验证成功之后，按照退款规则将支付款按原路退到买家帐号上。
      * @param tradingVo 交易单
-     * @return
+     * @return 交易单
      */
     @PostMapping("refund")
-    @ApiOperation(value = "申请退款",notes = "申请退款")
-    @ApiImplicitParam(name = "tradingVo",value = "交易单",required = true,dataType = "TradingVo")
-    @ApiOperationSupport(includeParameters ={"tradingVo.tradingOrderNo",
-            "tradingVo.operTionRefund","tradingVo.tradingChannel"})
-    public ResponseResult refundTrading(@RequestBody TradingVo tradingVo){
+    @ApiOperation(value = "申请退款", notes = "申请退款")
+    @ApiImplicitParam(name = "tradingVo", value = "交易单", required = true, dataType = "TradingVo")
+    @ApiOperationSupport(includeParameters = {"tradingVo.tradingOrderNo",
+            "tradingVo.operTionRefund", "tradingVo.tradingChannel"})
+    public ResponseResult<TradingVo> refundTrading(@RequestBody TradingVo tradingVo) {
         //1、对交易订单加锁
         Long productOrderNo = tradingVo.getProductOrderNo();
         OrderVo orderById = orderService.getOrderById(productOrderNo);

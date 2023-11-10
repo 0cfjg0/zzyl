@@ -17,6 +17,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 @RestController
@@ -24,9 +25,8 @@ import java.util.List;
 @Api(tags = "客户预约管理")
 public class CustomerReservationController extends BaseController {
 
-    @Autowired
+    @Resource
     private ReservationService reservationService;
-
 
     @GetMapping("/countByTime")
     @ApiOperation("查询每个时间段剩余预约次数")

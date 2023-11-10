@@ -6,11 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * BaseController
- *
- * @author: wgl
- * @describe: web层通用数据处理
- * @date: 2023/4/27 9:13
+ * web层通用数据处理
  **/
 @Api(tags = "基础控制器，提供一些公共方法")
 public class BaseController {
@@ -23,7 +19,7 @@ public class BaseController {
      * @param rows 影响行数
      * @return 操作结果
      */
-    protected ResponseResult toAjax(int rows) {
+    protected ResponseResult<Void> toAjax(int rows) {
         return rows > 0 ? ResponseResult.success() : ResponseResult.error();
     }
 
@@ -33,42 +29,42 @@ public class BaseController {
      * @param result 结果
      * @return 操作结果
      */
-    protected ResponseResult toAjax(boolean result) {
+    protected ResponseResult<Void> toAjax(boolean result) {
         return result ? success() : error();
     }
 
     /**
      * 返回成功
      */
-    public ResponseResult success() {
+    public ResponseResult<Void> success() {
         return ResponseResult.success();
     }
 
     /**
      * 返回失败消息
      */
-    public ResponseResult error() {
+    public ResponseResult<Void> error() {
         return ResponseResult.error();
     }
 
     /**
      * 返回成功消息
      */
-    public ResponseResult success(String message) {
+    public ResponseResult<Void> success(String message) {
         return ResponseResult.success(message);
     }
 
     /**
      * 返回成功消息
      */
-    public ResponseResult success(Object message) {
+    public <T> ResponseResult<T> success(T message) {
         return ResponseResult.success(message);
     }
 
     /**
      * 返回失败消息
      */
-    public ResponseResult error(String message) {
+    public ResponseResult<Void> error(String message) {
         return ResponseResult.error(message);
     }
 

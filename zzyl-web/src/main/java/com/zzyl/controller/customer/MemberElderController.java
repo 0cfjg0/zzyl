@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -22,7 +23,7 @@ import java.util.List;
 @Api(tags = "客户老人关联")
 public class MemberElderController {
 
-    @Autowired
+    @Resource
     private MemberElderService memberElderService;
 
     /**
@@ -33,7 +34,7 @@ public class MemberElderController {
      */
     @PostMapping("/add")
     @ApiOperation(value = "新增客户老人关联记录")
-    public ResponseResult add(@RequestBody @Validated MemberElderDto memberElderDto) {
+    public ResponseResult<Void> add(@RequestBody @Validated MemberElderDto memberElderDto) {
         memberElderService.add(memberElderDto);
         return ResponseResult.success();
     }
@@ -46,7 +47,7 @@ public class MemberElderController {
      */
     @PostMapping("/update")
     @ApiOperation(value = "根据id更新客户老人关联记录")
-    public ResponseResult update(@RequestBody @Validated MemberElderDto memberElderDto) {
+    public ResponseResult<Void> update(@RequestBody @Validated MemberElderDto memberElderDto) {
         memberElderService.update(memberElderDto);
         return ResponseResult.success();
     }
@@ -59,7 +60,7 @@ public class MemberElderController {
      */
     @DeleteMapping("/deleteById")
     @ApiOperation(value = "根据id删除客户老人关联记录")
-    public ResponseResult deleteById(@RequestParam Long id) {
+    public ResponseResult<Void> deleteById(@RequestParam Long id) {
         memberElderService.deleteById(id);
         return ResponseResult.success();
     }
@@ -72,7 +73,7 @@ public class MemberElderController {
      */
     @GetMapping("/getById")
     @ApiOperation(value = "根据id查询客户老人关联记录")
-    public ResponseResult getById(@RequestParam Long id) {
+    public ResponseResult<MemberElderVo> getById(@RequestParam Long id) {
         MemberElderVo memberElder = memberElderService.getById(id);
         return ResponseResult.success(memberElder);
     }
@@ -84,7 +85,7 @@ public class MemberElderController {
      */
     @GetMapping("/my")
     @ApiOperation(value = "我的家人列表")
-    public ResponseResult my() {
+    public ResponseResult<List<MemberElderVo>> my() {
         List<MemberElderVo> memberElders = memberElderService.my();
         return ResponseResult.success(memberElders);
     }

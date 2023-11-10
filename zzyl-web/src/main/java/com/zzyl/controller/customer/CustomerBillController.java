@@ -12,15 +12,17 @@ import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.Resource;
+
 /**
  * Bill控制器
  */
 @Api(tags = "客户账单")
 @RestController
 @RequestMapping("/customer/bill")
-public class CostomerBillController {
+public class CustomerBillController {
 
-    @Autowired
+    @Resource
     private BillService billService;
 
 
