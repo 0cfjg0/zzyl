@@ -3,7 +3,6 @@ package com.zzyl.controller;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.zzyl.base.PageResponse;
 import com.zzyl.base.ResponseResult;
-import com.zzyl.entity.NursingTask;
 import com.zzyl.service.NursingTaskService;
 import com.zzyl.utils.ObjectUtil;
 import com.zzyl.vo.NursingTaskVo;
@@ -11,10 +10,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/nursingTask")
@@ -26,13 +25,16 @@ public class NursingTaskController {
 
     /**
      * 根据ID获取护理任务
+     *
      * @param taskId 任务ID
      * @return 护理任务
      */
     @GetMapping
     @ApiOperation("根据ID获取护理任务")
-    @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Long", paramType = "query")
-    ResponseResult<NursingTaskVo> getById(@RequestParam("taskId") Long taskId) {
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Long", paramType = "query")
+    })
+    public ResponseResult<NursingTaskVo> getById(@RequestParam("taskId") Long taskId) {
         return ResponseResult.success(nursingTaskService.selectByPrimaryKey(taskId));
     }
 
@@ -48,7 +50,7 @@ public class NursingTaskController {
             @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Long", paramType = "query"),
             @ApiImplicitParam(name = "reason", value = "取消原因", required = true, dataType = "String", paramType = "query")
     })
-    ResponseResult cancelTask(@RequestParam("taskId") Long taskId, @RequestParam("reason") String reason) {
+    public ResponseResult<Void> cancelTask(@RequestParam("taskId") Long taskId, @RequestParam("reason") String reason) {
         nursingTaskService.cancelTask(taskId, reason);
         return ResponseResult.success();
     }
@@ -65,8 +67,9 @@ public class NursingTaskController {
             @ApiImplicitParam(name = "taskId", value = "任务ID", required = true, dataType = "Long", paramType = "query"),
             @ApiImplicitParam(name = "estimatedServerTime", value = "新的执行时间", required = true, dataType = "Long", paramType = "query")
     })
-    ResponseResult rescheduleTask(@RequestParam("taskId") Long taskId, @RequestParam("estimatedServerTime") Long estimatedServerTime) {
-              nursingTaskService.rescheduleTask(taskId, LocalDateTimeUtil.of(estimatedServerTime));
+    public ResponseResult<Void> rescheduleTask(@RequestParam("taskId") Long taskId,
+                                               @RequestParam("estimatedServerTime") Long estimatedServerTime) {
+        nursingTaskService.rescheduleTask(taskId, LocalDateTimeUtil.of(estimatedServerTime));
         return ResponseResult.success();
     }
 
@@ -86,7 +89,10 @@ public class NursingTaskController {
             @ApiImplicitParam(name = "taskImage", value = "任务图片", required = true, dataType = "String", paramType = "query"),
             @ApiImplicitParam(name = "mark", value = "备注", required = true, dataType = "String", paramType = "query")
     })
-    ResponseResult executeTask(@RequestParam("taskId") Long taskId, @RequestParam("estimatedServerTime") Long estimatedServerTime, @RequestParam("taskImage") String taskImage, @RequestParam("mark") String mark) {
+    public ResponseResult<Void> executeTask(@RequestParam("taskId") Long taskId,
+                                            @RequestParam("estimatedServerTime") Long estimatedServerTime,
+                                            @RequestParam("taskImage") String taskImage,
+                                            @RequestParam("mark") String mark) {
         nursingTaskService.executeTask(taskId, LocalDateTimeUtil.of(estimatedServerTime), taskImage, mark);
         return ResponseResult.success();
     }
@@ -103,8 +109,17 @@ public class NursingTaskController {
             @ApiImplicitParam(name = "endTime", value = "结束时间", dataType = "long", paramType = "query"),
             @ApiImplicitParam(name = "status", value = "状态  1待执行 2已执行 3已关闭 ", dataType = "Integer", paramType = "query")
     })
-    ResponseResult<PageResponse<NursingTaskVo>> getTasksByPage(@RequestParam(name = "pageNum", defaultValue = "1") int pageNum, @RequestParam(name = "pageSize", defaultValue = "10") int pageSize, @Param("elderName") String elderName, @Param("nurseId") Long nurseId, @Param("projectId") Long projectId, @Param("startTime") Long startTime, @Param("endTime") Long endTime, @Param("status") Integer status) {
-        PageResponse<NursingTaskVo> tasksByPage = nursingTaskService.getTasksByPage(pageNum, pageSize, elderName, nurseId, projectId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime), status);
+    public ResponseResult<PageResponse<NursingTaskVo>> getTasksByPage(@RequestParam(name = "pageNum", defaultValue = "1") int pageNum,
+                                                                      @RequestParam(name = "pageSize", defaultValue = "10") int pageSize,
+                                                                      @RequestParam("elderName") String elderName,
+                                                                      @RequestParam("nurseId") Long nurseId,
+                                                                      @RequestParam("projectId") Long projectId,
+                                                                      @RequestParam("startTime") Long startTime,
+                                                                      @RequestParam("endTime") Long endTime,
+                                                                      @RequestParam("status") Integer status) {
+        LocalDateTime startlocalDateTime = ObjectUtil.isEmpty(startTime) ? null : LocalDateTimeUtil.of(startTime);
+        LocalDateTime endlocalDateTime = ObjectUtil.isEmpty(endTime) ? null : LocalDateTimeUtil.of(endTime);
+        PageResponse<NursingTaskVo> tasksByPage = nursingTaskService.getTasksByPage(pageNum, pageSize, elderName, nurseId, projectId, startlocalDateTime, endlocalDateTime, status);
         return ResponseResult.success(tasksByPage);
     }
 

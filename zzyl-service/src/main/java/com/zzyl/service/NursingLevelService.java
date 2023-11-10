@@ -68,8 +68,8 @@ public interface NursingLevelService {
 
     /**
      * 根据计划id列表查询护理等级
-     * @param ids
-     * @return
+     * @param ids 计划id列表
+     * @return 护理级别分页结果
      */
     List<NursingLevel> listAllByPlanIds(List<Long> ids);
 }

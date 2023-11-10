@@ -9,15 +9,16 @@ import com.zzyl.entity.NursingLevel;
 import com.zzyl.mapper.NursingLevelMapper;
 import com.zzyl.service.NursingLevelService;
 import com.zzyl.vo.NursingLevelVo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class NursingLevelServiceImpl implements NursingLevelService {
-    @Autowired
+
+    @Resource
     private NursingLevelMapper nursingLevelMapper;
 
     // 获取所有护理等级数据

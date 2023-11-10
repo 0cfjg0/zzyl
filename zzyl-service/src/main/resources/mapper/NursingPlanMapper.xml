@@ -35,8 +35,6 @@
         VALUES (#{status}, #{sortNo}, #{planName}, #{createBy}, #{updateBy}, #{remark}, #{createTime}, #{updateTime});
     </insert>
 
-    <insert id="insertProjectPlanList"></insert>
-
     <update id="update" parameterType="com.zzyl.entity.NursingPlan">
         UPDATE nursing_plan
         SET plan_name   = #{planName},
