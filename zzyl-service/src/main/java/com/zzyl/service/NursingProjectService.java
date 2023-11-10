@@ -51,7 +51,7 @@ public interface NursingProjectService {
      */
     void deleteById(Long id);
 
-        /**
+    /**
      * 启用或禁用
      * @param id ID
      * @param status 状态
@@ -60,7 +60,8 @@ public interface NursingProjectService {
 
     /**
      * 查询所有护理项目
-     * @return
+     *
+     * @return 护理项目列表
      */
     List<NursingProjectVo> listAll();
 

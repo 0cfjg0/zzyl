@@ -21,47 +21,45 @@
 
     <!-- 新增护理项目 -->
     <insert id="insert">
-        insert into nursing_project (name, order_no, unit, price, image, nursing_requirement, status, create_by,
+        INSERT INTO nursing_project (name, order_no, unit, price, image, nursing_requirement, status, create_by,
                                      update_by, remark, create_time, update_time)
-        values (#{name}, #{orderNo}, #{unit}, #{price}, #{image}, #{nursingRequirement}, #{status}, #{createBy},
+        VALUES (#{name}, #{orderNo}, #{unit}, #{price}, #{image}, #{nursingRequirement}, #{status}, #{createBy},
                 #{updateBy}, #{remark}, #{createTime}, #{updateTime})
     </insert>
 
     <!-- 根据编号查询护理项目信息 -->
     <select id="selectById" resultMap="nursingProjectResultMap">
-        select *
-        from nursing_project
-        where id = #{id}
+        SELECT * FROM nursing_project WHERE id = #{id}
     </select>
 
     <!-- 分页查询护理项目列表 -->
     <select id="selectByPage" resultMap="nursingProjectResultMap">
-        select p.id, p.name, p.order_no, p.unit, p.price, p.image, p.nursing_requirement, p.status, p.create_by,
+        SELECT p.id, p.name, p.order_no, p.unit, p.price, p.image, p.nursing_requirement, p.status, p.create_by,
         p.update_by, p.remark, p.create_time, p.update_time
-        , s.real_name as creator
-        from nursing_project p
+        , s.real_name AS creator
+        FROM nursing_project p
         LEFT JOIN sys_user s ON p.create_by = s.id
         <where>
             <if test="name != null and name != ''">
-                and name like concat('%', #{name}, '%')
+                AND name LIKE concat('%', #{name}, '%')
             </if>
             <if test="status != null">
-                and status = #{status}
+                AND status = #{status}
             </if>
         </where>
-        order by p.order_no, p.create_time desc
+        ORDER BY p.order_no, p.create_time DESC
     </select>
+
     <select id="listAll" resultType="com.zzyl.vo.NursingProjectVo">
-        select *
-        from nursing_project
-        where status = 1
-        order by order_no, create_time desc
+        SELECT * FROM nursing_project
+        WHERE status = 1
+        ORDER BY order_no, create_time DESC
     </select>
 
     <!-- 更新护理项目信息 -->
     <update id="update">
-        update nursing_project
-        set name                = #{name},
+        UPDATE nursing_project
+        SET name                = #{name},
             order_no            = #{orderNo},
             unit                = #{unit},
             price               = #{price},
@@ -71,14 +69,12 @@
             update_by           = #{updateBy},
             remark              = #{remark},
             update_time         = #{updateTime}
-        where id = #{id}
+        WHERE id = #{id}
     </update>
 
     <!-- 删除护理项目信息 -->
     <delete id="deleteById">
-        delete
-        from nursing_project
-        where id = #{id}
+        DELETE FROM nursing_project WHERE id = #{id}
     </delete>
 
     <update id="updateStatus">
@@ -88,4 +84,5 @@
             update_by   = #{updateBy}
         WHERE id = #{id}
     </update>
+
 </mapper>
