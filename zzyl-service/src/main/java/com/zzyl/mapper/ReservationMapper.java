@@ -31,7 +31,6 @@ public interface ReservationMapper {
 
     int countCancelledReservationsWithinTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime, @Param("updateBy") Long updateBy);
 
-    @Update("update reservation set status = 3 where status = 0 and time <= #{minusDays}")
-    void updateReservationStatus(LocalDateTime minusDays);
+    void updateReservationStatus(@Param("minusDays")LocalDateTime minusDays);
 
 }

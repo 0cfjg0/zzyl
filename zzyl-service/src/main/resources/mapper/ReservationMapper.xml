@@ -112,4 +112,8 @@
         AND status = 2
         and update_by = #{updateBy}
     </select>
+
+    <update id="updateReservationStatus" parameterType="java.time.LocalDateTime">
+        UPDATE reservation SET status = 3 WHERE status = 0 AND time &lt;= #{minusDays}
+    </update>
 </mapper>
