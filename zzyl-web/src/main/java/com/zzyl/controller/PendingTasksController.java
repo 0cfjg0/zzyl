@@ -28,7 +28,7 @@ public class PendingTasksController extends BaseController {
 
     @PostMapping("/selectByPage")
     @ApiOperation(value = "查询待办", notes = "传入退住对象")
-    public ResponseResult<PendingTasks> selectByPage(@RequestBody PendingTasksDto pendingTasksDto){
+    public ResponseResult<PageResponse<PendingTasks>> selectByPage(@RequestBody PendingTasksDto pendingTasksDto){
         //只查询有当前登录人的任务
         Long userId = UserThreadLocal.getMgtUserId();
         if(pendingTasksDto.getReqType() == 0){
