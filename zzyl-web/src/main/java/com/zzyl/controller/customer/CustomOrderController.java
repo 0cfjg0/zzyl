@@ -114,8 +114,9 @@ public class CustomOrderController {
     @GetMapping("/project/{id}")
     @ApiOperation("根据编号查询护理项目信息")
     public ResponseResult<NursingProjectVo> getById(@PathVariable("id") Long id) {
-        NursingProjectVo nursingProjectVO = nursingProjectService.getById(id);
-        return ResponseResult.success(nursingProjectVO);
+        // NursingProjectVo nursingProjectVO = nursingProjectService.getById(id);
+        // return ResponseResult.success(nursingProjectVO);
+        return null;
     }
 
     /**
@@ -134,8 +135,9 @@ public class CustomOrderController {
             @RequestParam(value = "status", required = false) Integer status,
             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
-        PageResponse<NursingProjectVo> nursingProjectPageInfo = nursingProjectService.getByPage(name, status, pageNum, pageSize);
-        return ResponseResult.success(nursingProjectPageInfo);
+        // PageResponse<NursingProjectVo> nursingProjectPageInfo = nursingProjectService.getByPage(name, status, pageNum, pageSize);
+        // return ResponseResult.success(nursingProjectPageInfo);
+        return null;
     }
 
     /***

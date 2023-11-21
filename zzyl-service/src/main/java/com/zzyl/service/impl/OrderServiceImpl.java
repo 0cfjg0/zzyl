@@ -117,8 +117,9 @@ public class OrderServiceImpl implements OrderService {
         billDto.setPayableAmount(order.getAmount());
         billDto.setTradingOrderNo(tradingVo1.getTradingOrderNo());
         billDto.setElderId(order.getElderId());
-        NursingProjectVo byId = nursingProjectService.getById(order.getProjectId());
-        billDto.setRemark(byId.getName());
+        //TODO
+        // NursingProjectVo byId = nursingProjectService.getById(order.getProjectId());
+        // billDto.setRemark(byId.getName());
         billService.createProjectBill(billDto);
 
         OrderVo orderVo = BeanUtil.toBean(order, OrderVo.class);
