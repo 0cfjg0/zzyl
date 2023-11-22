@@ -1,6 +1,7 @@
 package com.zzyl.entity;
 
 import com.zzyl.base.BaseEntity;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
  * 实体类：NursingProject（护理项目）
  */
 @Data
+@ApiModel(description = "护理项目实体类")
 public class NursingProject extends BaseEntity {
 
     /**
