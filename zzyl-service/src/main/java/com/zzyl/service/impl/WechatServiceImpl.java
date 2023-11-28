@@ -1,6 +1,5 @@
 package com.zzyl.service.impl;
 
-import cn.hutool.json.JSONObject;
 import com.zzyl.service.WechatService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,11 +10,12 @@ public class WechatServiceImpl implements WechatService {
 
     /**
      * 获取openid
+     *
      * @param code 登录凭证
      * @return 唯一标识
      */
     @Override
-    public JSONObject getOpenid(String code) {
+    public String getOpenid(String code) {
         //TODO 待实现
         return null;
     }

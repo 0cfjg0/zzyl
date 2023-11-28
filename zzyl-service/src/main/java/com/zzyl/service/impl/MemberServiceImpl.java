@@ -10,7 +10,6 @@ import com.zzyl.vo.MemberVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -59,7 +58,7 @@ public class MemberServiceImpl implements MemberService {
      * @return 用户信息
      */
     @Override
-    public LoginVo login(UserLoginRequestDto userLoginRequestDto) throws IOException {
+    public LoginVo login(UserLoginRequestDto userLoginRequestDto) {
         //TODO 待实现
         return null;
     }

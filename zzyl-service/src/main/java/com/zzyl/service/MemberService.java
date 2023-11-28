@@ -41,9 +41,8 @@ public interface MemberService {
      *
      * @param userLoginRequestDto 登录code
      * @return 用户信息
-     * @throws IOException IO异常
      */
-    LoginVo login(UserLoginRequestDto userLoginRequestDto) throws IOException;
+    LoginVo login(UserLoginRequestDto userLoginRequestDto);
 
     /**
      * 更新用户信息

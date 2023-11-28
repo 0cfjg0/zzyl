@@ -1,9 +1,5 @@
 package com.zzyl.service;
 
-import cn.hutool.json.JSONObject;
-
-import java.io.IOException;
-
 public interface WechatService {
 
     // 登录
@@ -18,16 +14,14 @@ public interface WechatService {
      *
      * @param code 登录凭证
      * @return 唯一标识
-     * @throws IOException IO异常
      */
-    JSONObject getOpenid(String code) throws IOException;
+    String getOpenid(String code);
 
     /**
      * 获取手机号
      *
      * @param code 手机号凭证
      * @return 唯一标识
-     * @throws IOException IO异常
      */
-    String getPhone(String code) throws IOException;
+    String getPhone(String code);
 }
