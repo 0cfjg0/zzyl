@@ -50,14 +50,15 @@ public interface ReservationService {
 
     /**
      * 分页查找预约信息
-     * @param page 页码
-     * @param size 每页大小
-     * @param name 预约人姓名
-     * @param phone 预约人手机号
-     * @param status 预约状态
-     * @param type 预约类型
-     * @param startTime
-     * @param endTime
+     *
+     * @param page      页码
+     * @param size      每页大小
+     * @param name      预约人姓名
+     * @param phone     预约人手机号
+     * @param status    预约状态
+     * @param type      预约类型
+     * @param startTime 开始时间
+     * @param endTime   结束时间
      * @return 预约信息列表
      */
     PageResponse<ReservationVo> findByPage(int page, int size, String name, String phone, Integer status, Integer type, LocalDateTime startTime, LocalDateTime endTime);
