@@ -123,24 +123,7 @@
           AND u.data_state = '0'
     </select>
     <select id="findUserVoListByPostNo" parameterType="java.lang.String" resultMap="BaseResultVoMap">
-        SELECT u.id,
-               u.user_name,
-               u.open_id,
-               u.password,
-               u.user_type,
-               u.avatar,
-               u.nick_name,
-               u.email,
-               u.real_name,
-               u.mobile,
-               u.sex,
-               u.data_state,
-               u.create_by,
-               u.create_time,
-               u.update_by,
-               u.update_time,
-               u.remark,
-               u.post_no
+        SELECT *
         FROM sys_user u
         WHERE u.post_no = #{postNo}
           AND u.data_state = '0'

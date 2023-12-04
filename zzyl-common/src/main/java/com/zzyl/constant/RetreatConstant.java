@@ -26,6 +26,11 @@ public class RetreatConstant {
      */
     public static final String DEAN_OFFICE_DEPT_CODE = "100001001000000";
 
+    /**
+     * 副院长职位编号
+     */
+    public static final String VICE_PRESIDENT_POST_NO = "100001001002000";
+
 
     /**
      * 退住业务-审核步骤编号
