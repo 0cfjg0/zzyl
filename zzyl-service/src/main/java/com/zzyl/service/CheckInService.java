@@ -1,7 +1,9 @@
 package com.zzyl.service;
 
+import com.zzyl.base.PageResponse;
 import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.CheckInDto;
+import com.zzyl.vo.CheckInVo;
 import com.zzyl.vo.retreat.TasVo;
 
 import java.time.LocalDateTime;
@@ -15,7 +17,7 @@ public interface CheckInService extends IActFlowCustomService {
      * 入住申请
      * @param checkInDto
      */
-    ResponseResult createCheckIn(CheckInDto checkInDto);
+    ResponseResult<CheckInVo> createCheckIn(CheckInDto checkInDto);
 
     /**
      * 查询入住信息
@@ -30,7 +32,7 @@ public interface CheckInService extends IActFlowCustomService {
      * @param id
      * @return
      */
-    ResponseResult submitCheckIn(Long id, String info, String taskId);
+    ResponseResult<CheckInVo> submitCheckIn(Long id, String info, String taskId);
 
     /**
      * 审核拒绝
@@ -38,7 +40,7 @@ public interface CheckInService extends IActFlowCustomService {
      * @param reject   拒绝原因
      * @return
      */
-    ResponseResult auditReject(Long id, String reject, String taskId);
+    ResponseResult<CheckInVo> auditReject(Long id, String reject, String taskId);
 
     /**
      * 撤回
@@ -46,14 +48,14 @@ public interface CheckInService extends IActFlowCustomService {
      * @param flowStatus
      * @return
      */
-    ResponseResult revocation(Long id, Integer flowStatus, String taskId);
+    ResponseResult<CheckInVo> revocation(Long id, Integer flowStatus, String taskId);
 
     /**
      * 驳回
      * @param id
      * @return
      */
-    ResponseResult disapprove(Long id, String message, String taskId);
+    ResponseResult<CheckInVo> disapprove(Long id, String message, String taskId);
 
     /**
      * 入住管理列表查询
@@ -68,19 +70,19 @@ public interface CheckInService extends IActFlowCustomService {
      * @param userId         用户id
      * @return
      */
-    ResponseResult selectByPage(String checkInCode, String name, String idCardNo, LocalDateTime start, LocalDateTime end, Integer pageNum, Integer pageSize, String deptNo, Long userId);
+    ResponseResult<PageResponse<CheckInVo>> selectByPage(String checkInCode, String name, String idCardNo, LocalDateTime start, LocalDateTime end, Integer pageNum, Integer pageSize, String deptNo, Long userId);
 
     /**
      * 撤销
      * @param checkInCode   入住编码
      * @return
      */
-    ResponseResult cancel(Long checkInCode, String taskId);
+    ResponseResult<CheckInVo> cancel(Long checkInCode, String taskId);
 
     /**
      * 评估
      * @param checkInDto
      * @return
      */
-    ResponseResult review(CheckInDto checkInDto);
+    ResponseResult<CheckInVo> review(CheckInDto checkInDto);
 }
