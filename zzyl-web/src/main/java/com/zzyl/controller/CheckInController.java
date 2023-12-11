@@ -7,9 +7,7 @@ import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.CheckInConfigDto;
 import com.zzyl.dto.CheckInDto;
 import com.zzyl.dto.ContractDto;
-import com.zzyl.service.CheckInConfigService;
 import com.zzyl.service.CheckInService;
-import com.zzyl.service.ContractService;
 import com.zzyl.utils.UserThreadLocal;
 import com.zzyl.vo.CheckInVo;
 import com.zzyl.vo.UserVo;
@@ -17,7 +15,6 @@ import com.zzyl.vo.retreat.TasVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -30,11 +27,6 @@ public class CheckInController {
 
     @Resource
     private CheckInService checkInService;
-    @Resource
-    private ContractService contractService;
-    @Resource
-    private CheckInConfigService checkInConfigService;
-
 
     @PostMapping("/create")
     @ApiOperation(value = "申请入住", notes = "传入入住对象")
@@ -45,7 +37,7 @@ public class CheckInController {
 
     @PostMapping("/review")
     @ApiOperation(value = "评估", notes = "传入入住对象")
-    public ResponseResult<CheckInVo> review(
+    public ResponseResult<Void> review(
             @RequestBody @ApiParam(value = "入住对象", required = true) CheckInDto checkInDto) {
         return checkInService.review(checkInDto);
     }
@@ -62,7 +54,7 @@ public class CheckInController {
 
     @PutMapping("/submit")
     @ApiOperation(value = "同意")
-    public ResponseResult<CheckInVo> submitCheckIn(
+    public ResponseResult<Void> submitCheckIn(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "审批意见") String message,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
@@ -71,7 +63,7 @@ public class CheckInController {
 
     @PutMapping
     @ApiOperation(value = "驳回")
-    public ResponseResult<CheckInVo> disapprove(
+    public ResponseResult<Void> disapprove(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "驳回消息") String message,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
@@ -80,7 +72,7 @@ public class CheckInController {
 
     @PutMapping("/reject")
     @ApiOperation(value = "审核拒绝")
-    public ResponseResult<CheckInVo> auditReject(
+    public ResponseResult<Void> auditReject(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "拒绝原因") String message,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
@@ -89,7 +81,7 @@ public class CheckInController {
 
     @PutMapping("/revocation")
     @ApiOperation(value = "撤回")
-    public ResponseResult<CheckInVo> revocation(
+    public ResponseResult<Void> revocation(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "流程状态") Integer flowStatus,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
@@ -98,8 +90,8 @@ public class CheckInController {
 
     @PutMapping("/cancel")
     @ApiOperation(value = "撤销")
-    public ResponseResult<CheckInVo> cancel(@RequestParam @ApiParam(value = "入住Id") Long id,
-                                 @RequestParam @ApiParam(value = "任务ID") String taskId){
+    public ResponseResult<Void> cancel(@RequestParam @ApiParam(value = "入住Id") Long id,
+                                       @RequestParam @ApiParam(value = "任务ID") String taskId) {
         return checkInService.cancel(id, taskId);
     }
 
@@ -137,8 +129,7 @@ public class CheckInController {
     @PostMapping
     @ApiOperation(value = "入住配置")
     public ResponseResult<Void> checkIn(@RequestBody CheckInConfigDto checkInConfigDto) {
-        checkInConfigService.checkIn(checkInConfigDto);
-        return ResponseResult.success();
+        return checkInService.checkIn(checkInConfigDto);
     }
 
     /**
@@ -149,7 +140,6 @@ public class CheckInController {
     @PostMapping("/sign")
     @ApiOperation(value = "签约办理")
     public ResponseResult<Void> sign(@RequestBody ContractDto contractDto) {
-        contractService.sign(contractDto);
-        return ResponseResult.success();
+        return checkInService.sign(contractDto);
     }
 }
