@@ -270,6 +270,11 @@ public class ContractServiceImpl implements ContractService {
     public List<ContractVo> listByMemberPhone(String phone) {
         return contractMapper.listByMemberPhone(phone);
     }
+
+    @Override
+    public ContractVo selectByElderId(Long elderId) {
+        return BeanUtil.toBean(this.contractMapper.selectByElderId(elderId), ContractVo.class);
+    }
 }
 
 

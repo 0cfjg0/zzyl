@@ -4,13 +4,13 @@ import com.zzyl.dto.CheckInConfigDto;
 import com.zzyl.entity.CheckInConfig;
 
 /**
-* <p>
-* check_in_config Service 接口
-* </p>
-*
-* @author itcast
-* @since 2023-06-27 09:52:42
-*/
+ * <p>
+ * check_in_config Service 接口
+ * </p>
+ *
+ * @author itcast
+ * @since 2023-06-27 09:52:42
+ */
 public interface CheckInConfigService {
 
     /**
@@ -24,7 +24,6 @@ public interface CheckInConfigService {
      * 入住选择配置
      *
      * @param checkInConfigDto 入住选择配置
-     * @return 受影响的行数
      */
-    int checkIn(CheckInConfigDto checkInConfigDto);
+    void checkIn(CheckInConfigDto checkInConfigDto);
 }

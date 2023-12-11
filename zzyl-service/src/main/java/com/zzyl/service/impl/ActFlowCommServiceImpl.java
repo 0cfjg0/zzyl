@@ -1,15 +1,13 @@
 package com.zzyl.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zzyl.base.PageResponse;
-import com.zzyl.constant.PendingTasksConstant;
 import com.zzyl.dto.PendingTasksDto;
 import com.zzyl.entity.*;
-import com.zzyl.mapper.AccraditationRecordMapper;
 import com.zzyl.mapper.HiActinstMapper;
 import com.zzyl.service.ActFlowCommService;
-import com.zzyl.utils.ObjectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.activiti.bpmn.model.Process;
 import org.activiti.bpmn.model.*;
@@ -20,57 +18,41 @@ import org.activiti.engine.TaskService;
 import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.history.HistoricActivityInstanceQuery;
 import org.activiti.engine.history.HistoricTaskInstance;
-import org.activiti.engine.history.HistoricTaskInstanceQuery;
-import org.activiti.engine.impl.identity.Authentication;
 import org.activiti.engine.repository.Deployment;
-import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskInfo;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @Transactional
 public class ActFlowCommServiceImpl implements ActFlowCommService {
 
-    @Autowired
+    @Resource
     private RepositoryService repositoryService;
-
-    @Autowired
+    @Resource
     private RuntimeService runtimeService;
-
-    @Autowired
+    @Resource
     private TaskService taskService;
-
-    @Autowired
+    @Resource
     private HistoryService historyService;
-
-    @Autowired
+    @Resource
     private HiActinstMapper hiActinstMapper;
 
-    @Autowired
-    private AccraditationRecordMapper accraditationRecordMapper;
-
-
     @Override
-    public Long getNextAssignee(String formKey, String bussinessKey) {
-        Task task = taskService.createTaskQuery()
-                .processDefinitionKey(formKey) //流程Key
-                .processInstanceBusinessKey(bussinessKey)
-                .singleResult();
-        if (task != null) {
-            return Long.valueOf(task.getAssignee());
-        }
-        return null;
+    public Long getNextAssignee(String formKey, String businessKey) {
+        return 0L;
     }
 
     /**
@@ -83,44 +65,23 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
                 .name(flowInfo.getFlowname())
                 .key(flowInfo.getFlowkey())
                 .deploy();
-//        4、输出部署信息
-        System.out.println("流程部署id：" + deployment.getId());
-        System.out.println("流程部署名称：" + deployment.getName());
+        log.info("流程部署id：" + deployment.getId());
+        log.info("流程部署名称：" + deployment.getName());
     }
 
-    /**
-     * 启动流程实例
-     */
     @Override
-    public ProcessInstance startProcess(String formKey, Map<String, Object> variables, String bussinessKey, Long id) {
-        variables.put("bussinessKey", bussinessKey);
-        //启动流程
-        log.info("【启动流程】，formKey ：{},bussinessKey:{}", formKey, bussinessKey);
-        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(formKey, bussinessKey, variables);
-        //流程实例ID
-        String processDefinitionId = processInstance.getProcessDefinitionId();
-        log.info("【启动流程】- 成功，processDefinitionId：{}", processDefinitionId);
-        return processInstance;
-    }
-
-    /**
-     * 查看个人任务列表
-     */
-    @Override
-    public List<Map<String, Object>> myTaskList(String userid) {
-
-        /**
-         * 根据负责人id  查询任务
-         */
-        TaskQuery taskQuery = taskService.createTaskQuery().taskAssignee(userid);
-
+    public List<Map<String, Object>> myTaskList(String userId) {
+        //根据负责人id  查询任务
+        TaskQuery taskQuery = taskService.createTaskQuery().taskAssignee(userId);
         List<Task> list = taskQuery.orderByTaskCreateTime().desc().list();
-
-        List<Map<String, Object>> listmap = new ArrayList<Map<String, Object>>();
+        if (CollUtil.isEmpty(list)) {
+            return ListUtil.empty();
+        }
+        List<Map<String, Object>> listMap = new ArrayList<>();
         for (Task task : list) {
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("taskid", task.getId());
-            map.put("taskname", task.getName());
+            Map<String, Object> map = new HashMap<>();
+            map.put("taskId", task.getId());
+            map.put("taskName", task.getName());
             map.put("description", task.getDescription());
             map.put("priority", task.getPriority());
             map.put("owner", task.getOwner());
@@ -135,168 +96,25 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
             map.put("category", task.getCategory());
             map.put("parentTaskId", task.getParentTaskId());
             map.put("tenantId", task.getTenantId());
-            listmap.add(map);
+            listMap.add(map);
         }
-
-        return listmap;
+        return listMap;
     }
 
-    /**
-     * 查看个人任务信息
-     *
-     * @param pendingTasksDto
-     */
     @Override
     public PageResponse<PendingTasks> myTaskInfoList(PendingTasksDto pendingTasksDto) {
-
-        /**
-         * 根据负责人id  查询任务
-         */
-        HistoricTaskInstanceQuery taskQuery = historyService.createHistoricTaskInstanceQuery();
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getIsHandle())) {
-            if (pendingTasksDto.getIsHandle() == 1) {
-                taskQuery.finished();
-            } else {
-                taskQuery.unfinished();
-            }
-        }
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getApplicatId())) {
-            taskQuery.taskAssignee(pendingTasksDto.getApplicatId().toString());
-            taskQuery.processVariableValueEquals("assignee0", pendingTasksDto.getApplicatId());
-            taskQuery.taskNameLike("%申请");
-        } else {
-            taskQuery.taskAssignee(pendingTasksDto.getAssigneeId().toString());
-            taskQuery.taskNameLike("%处理");
-        }
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getStartTime()) && ObjectUtil.isNotEmpty(pendingTasksDto.getEndTime())) {
-            taskQuery.taskCreatedAfter(pendingTasksDto.getStartTime()).taskCreatedBefore(pendingTasksDto.getEndTime());
-        }
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getType())) {
-            taskQuery.processVariableValueEquals("processType", pendingTasksDto.getType());
-        }
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getCode())) {
-            taskQuery.processVariableValueEquals("processCode", pendingTasksDto.getCode());
-        }
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getStatus())) {
-            taskQuery.processVariableValueEquals("processStatus", pendingTasksDto.getStatus());
-        }
-
-        if (ObjectUtil.isNotEmpty(pendingTasksDto.getApplicat())) {
-            taskQuery.processVariableValueLike("assignee0Name", "%" + pendingTasksDto.getApplicat() + "%");
-        }
-
-        long count = taskQuery.count();
-        List<HistoricTaskInstance> list = taskQuery.includeProcessVariables().orderByHistoricTaskInstanceStartTime().desc().listPage((pendingTasksDto.getPageNum() - 1) * pendingTasksDto.getPageSize(), pendingTasksDto.getPageSize());
-
-
-        //log.info(" 任务查询 {} " , taskQuery);
-        List<PendingTasks> pendingTasks = new ArrayList<>();
-        for (HistoricTaskInstance task : list) {
-
-            Map<String, Object> variableInstances = task.getProcessVariables();
-            PendingTasks pendingTask = new PendingTasks();
-            pendingTask.setId(task.getId());
-            pendingTask.setCode(variableInstances.get("processCode").toString());
-
-            pendingTask.setType(Integer.parseInt(variableInstances.get("processType").toString()));
-
-            pendingTask.setTitle(variableInstances.get("processTitle").toString());
-            pendingTask.setApplicat(variableInstances.get("assignee0Name").toString());
-            pendingTask.setStatus(Integer.parseInt(variableInstances.get("processStatus").toString()));
-            pendingTask.setAssigneeId(Long.valueOf(task.getAssignee()));
-
-            Long bussinessId = Long.parseLong(variableInstances.get("bussinessKey").toString().split(":")[1]);
-            pendingTask.setApplicationTime(getStartTime(bussinessId, pendingTask.getType()));
-            if (!pendingTask.getStatus().equals(PendingTasksConstant.TASK_STATUS_APPLICATION)) {
-                pendingTask.setFinishTime(getFinishTime(bussinessId, pendingTask.getType()));
-            }
-            pendingTask.setCheckInId(bussinessId);
-            pendingTasks.add(pendingTask);
-        }
-        List<PendingTasks> tasks = pendingTasks.stream().sorted(Comparator.comparing(PendingTasks::getApplicationTime).reversed()).collect(Collectors.toList());
-        return PageResponse.of(tasks, pendingTasksDto.getPageNum(), pendingTasksDto.getPageSize(), (count + pendingTasksDto.getPageSize() - 1) / pendingTasksDto.getPageSize(), count);
+        //TODO 待实现
+        return null;
     }
 
-    private LocalDateTime getStartTime(Long id, Integer type) {
-        return accraditationRecordMapper.getFirstByBuisId(id, type).getCreateTime();
-    }
-
-    private LocalDateTime getFinishTime(Long id, Integer type) {
-        return accraditationRecordMapper.getLastByBuisId(id, type).getCreateTime();
-    }
-
-
-    /**
-     * 完成提交任务
-     */
     @Override
     public void completeProcess(String title, String taskId, String userId, Integer code, Integer status) {
-        //任务Id 查询任务对象
-        Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
-
-        if (task == null) {
-            log.error("completeProcess - task is null!!");
-            return;
-        }
-
-
-        //任务对象  获取流程实例Id
-        String processInstanceId = task.getProcessInstanceId();
-
-        Authentication.setAuthenticatedUserId(userId);
-
-        HistoricTaskInstanceQuery historicTaskInstanceQuery = historyService.createHistoricTaskInstanceQuery().processInstanceId(processInstanceId);
-        List<HistoricTaskInstance> list = historicTaskInstanceQuery.list();
-        if (CollUtil.isNotEmpty(list)) {
-            list.forEach(v -> {
-                if (v.getFormKey().equals((Integer.parseInt(task.getFormKey()) + 1) + "")) {
-                    historyService.deleteHistoricTaskInstance(v.getId());
-                }
-                if (code.equals(3) && (v.getFormKey().equals("0"))) {
-                    historyService.deleteHistoricTaskInstance(v.getId());
-                }
-            });
-        }
-        //完成办理
-        Map<String, Object> variables = new HashMap<>();
-        if (ObjectUtil.isNotEmpty(status)) {
-            variables.put("processStatus", status);
-        }
-        if (ObjectUtil.isNotEmpty(title)) {
-            variables.put("processTitle", title);
-        }
-        variables.put("ops", code);
-        taskService.complete(taskId, variables);
+        //TODO 待实现
     }
 
     @Override
     public void start(Long id, String formKey, User user, Map<String, Object> variables, boolean autoFinished) {
-        //使用流程变量设置字符串（格式 ： Evection:Id 的形式）
-        //使用正在执行对象表中的一个字段BUSINESS_KEY(Activiti提供的一个字段)，让启动的流程（流程实例）关联业务
-        String bussinessKey = formKey + ":" + id;
-        ProcessInstance processInstance = startProcess(formKey, variables, bussinessKey, id);
-        //	流程实例ID
-        String processDefinitionId = processInstance.getProcessDefinitionId();
-        log.info("processDefinitionId is {}", processDefinitionId);
-        List<Map<String, Object>> taskList = myTaskList(user.getId().toString());
-        if (!CollectionUtils.isEmpty(taskList)) {
-            for (Map<String, Object> map : taskList) {
-                if (map.get("assignee").toString().equals(user.getId().toString()) &&
-                        map.get("processDefinitionId").toString().equals(processDefinitionId)) {
-                    log.info("processDefinitionId is {}", map.get("processDefinitionId").toString());
-                    log.info("taskid is {}", map.get("taskid").toString());
-                    if (autoFinished) {
-                        completeProcess("", map.get("taskid").toString(), user.getId().toString(), 1, PendingTasksConstant.TASK_STATUS_APPLICATION);
-                    }
-                }
-
-            }
-        }
+        //TODO 待实现
     }
 
     /**
@@ -309,45 +127,24 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
      */
     @Override
     public void closeProcess(String taskId, Integer status) {
-
-        HistoricTaskInstance historicTaskInstance = historyService.createHistoricTaskInstanceQuery().taskId(taskId).singleResult();
-        // 从任务中拿到流程实例id
-        String processInstanceId = historicTaskInstance.getProcessInstanceId();
-
-        //设置流程变量
-        String executionId = taskService.createTaskQuery().processInstanceId(processInstanceId).list().get(0).getExecutionId();
+        //查询历史任务
+        HistoricTaskInstance historicTaskInstance = this.historyService.createHistoricTaskInstanceQuery()
+                .taskId(taskId).singleResult();
         // 设置参数
         Map<String, Object> variable = new HashMap<>();
         // 设置为已关闭
         variable.put("processStatus", status);
+        variable.put("finishTime", LocalDateTime.now());
         //记录流程变量
-        runtimeService.setVariables(executionId, variable);
+        this.runtimeService.setVariables(historicTaskInstance.getExecutionId(), variable);
         //删除流程实例
-        runtimeService.deleteProcessInstance(processInstanceId,"申请人撤销");
-
+        this.runtimeService.deleteProcessInstance(historicTaskInstance.getProcessInstanceId(), "申请人撤销");
     }
 
-    /**
-     * 是否查看当前审核用户的任务
-     *
-     * @param taskId
-     * @param status
-     * @param checkIn
-     * @return
-     */
     @Override
     public Integer isCurrentUserAndStep(String taskId, Integer status, CheckIn checkIn) {
-        HistoricTaskInstance historicTaskInstance = historyService.createHistoricTaskInstanceQuery().taskId(taskId).singleResult();
-        if (checkIn.getFlowStatus().equals(status) && checkIn.getStatus().equals(CheckIn.Status.APPLICATION.getCode())) {
-            if (historicTaskInstance.getFormKey().equals(checkIn.getFlowStatus().toString())) {
-                return 1;
-            }
-            return 0;
-        }
-        if (historicTaskInstance.getFormKey().equals((checkIn.getFlowStatus() - 1) + "") && checkIn.getStatus().equals(CheckIn.Status.APPLICATION.getCode())) {
-            return 2;
-        }
-        return 3;
+        //TODO 待实现
+        return 1;
     }
 
 

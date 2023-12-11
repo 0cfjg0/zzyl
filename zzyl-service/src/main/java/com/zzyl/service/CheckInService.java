@@ -2,7 +2,9 @@ package com.zzyl.service;
 
 import com.zzyl.base.PageResponse;
 import com.zzyl.base.ResponseResult;
+import com.zzyl.dto.CheckInConfigDto;
 import com.zzyl.dto.CheckInDto;
+import com.zzyl.dto.ContractDto;
 import com.zzyl.vo.CheckInVo;
 import com.zzyl.vo.retreat.TasVo;
 
@@ -29,33 +31,36 @@ public interface CheckInService extends IActFlowCustomService {
 
     /**
      * 同意入住申请
+     *
      * @param id
      * @return
      */
-    ResponseResult<CheckInVo> submitCheckIn(Long id, String info, String taskId);
+    ResponseResult<Void> submitCheckIn(Long id, String info, String taskId);
 
     /**
      * 审核拒绝
-     * @param id  入住单code
-     * @param reject   拒绝原因
+     *
+     * @param id     入住单code
+     * @param reject 拒绝原因
      * @return
      */
-    ResponseResult<CheckInVo> auditReject(Long id, String reject, String taskId);
+    ResponseResult<Void> auditReject(Long id, String reject, String taskId);
 
     /**
      * 撤回
+     *
      * @param id
      * @param flowStatus
      * @return
      */
-    ResponseResult<CheckInVo> revocation(Long id, Integer flowStatus, String taskId);
+    ResponseResult<Void> revocation(Long id, Integer flowStatus, String taskId);
 
     /**
      * 驳回
      * @param id
      * @return
      */
-    ResponseResult<CheckInVo> disapprove(Long id, String message, String taskId);
+    ResponseResult<Void> disapprove(Long id, String message, String taskId);
 
     /**
      * 入住管理列表查询
@@ -74,15 +79,33 @@ public interface CheckInService extends IActFlowCustomService {
 
     /**
      * 撤销
-     * @param checkInCode   入住编码
-     * @return
+     *
+     * @param id 入住id
+     * @return 响应标识
      */
-    ResponseResult<CheckInVo> cancel(Long checkInCode, String taskId);
+    ResponseResult<Void> cancel(Long id, String taskId);
 
     /**
      * 评估
+     *
      * @param checkInDto
      * @return
      */
-    ResponseResult<CheckInVo> review(CheckInDto checkInDto);
+    ResponseResult<Void> review(CheckInDto checkInDto);
+
+    /**
+     * 入住配置
+     *
+     * @param checkInConfigDto 入住配置数据
+     * @return 响应标识
+     */
+    ResponseResult<Void> checkIn(CheckInConfigDto checkInConfigDto);
+
+    /**
+     * 签约办理
+     *
+     * @param contractDto 签约数据
+     * @return 响应标识
+     */
+    ResponseResult<Void> sign(ContractDto contractDto);
 }

@@ -81,6 +81,14 @@ public interface ContractService {
      * @return
      */
     List<ContractVo> listByMemberPhone(String phone);
+
+    /**
+     * 根据老人id查询合同信息
+     *
+     * @param elderId 老人id
+     * @return 合同信息
+     */
+    ContractVo selectByElderId(Long elderId);
 }
 
 
