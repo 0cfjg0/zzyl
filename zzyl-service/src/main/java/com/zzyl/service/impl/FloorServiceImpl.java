@@ -79,11 +79,6 @@ public class FloorServiceImpl implements FloorService {
     }
 
     @Override
-    public List<FloorVo> selectAllByDevice() {
-        return floorMapper.selectAllByDevice();
-    }
-
-    @Override
     public List<FloorVo> selectAllByNur() {
         return floorMapper.selectAllByNur();
     }

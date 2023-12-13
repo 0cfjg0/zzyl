@@ -52,12 +52,6 @@ public interface FloorService {
     List<FloorVo> getAllWithRoomAndBed();
 
     /**
-     * 查询查询智能设备的所有楼层
-     * @return
-     */
-    List<FloorVo> selectAllByDevice();
-
-    /**
      * 查询所有楼层
      * @return
      */

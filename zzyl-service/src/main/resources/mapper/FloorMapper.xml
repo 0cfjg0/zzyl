@@ -96,20 +96,6 @@
 
     </select>
 
-    <select id="selectAllByDevice" resultType="com.zzyl.vo.FloorVo">
-        select f.*
-        from floor f
-                 left join room r on r.floor_id = f.id
-                 left join bed b on b.room_id = r.id
-                 left join device d
-                           on d.binding_location = r.id and d.location_type = 1 and d.physical_location_type = 1
-                 left join device dd
-                           on dd.binding_location = b.id and dd.location_type = 1 and dd.physical_location_type = 2
-        where (d.id is not null or dd.id is not null)
-        group by f.id
-        order by code, create_time desc
-
-    </select>
     <select id="selectAllRoomAndBed" resultMap="floorResultMapWithRoomAndBed">
         select f.name,
                f.id,

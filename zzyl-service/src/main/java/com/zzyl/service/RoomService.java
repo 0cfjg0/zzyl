@@ -56,13 +56,6 @@ public interface RoomService {
     Map<String, Integer> countRoomByTypeName(List<String> collect);
 
     /**
-     * 根据楼层id查询所有的设备数据
-     * @param floorId
-     * @return
-     */
-    List<RoomVo> getRoomsWithDeviceByFloorId(Long floorId);
-
-    /**
      * 根据楼层ID查询所有的房间和床位
      * @param floorId
      * @return

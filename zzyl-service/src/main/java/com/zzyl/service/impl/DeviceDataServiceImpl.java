@@ -50,17 +50,4 @@ public class DeviceDataServiceImpl implements DeviceDataService {
         deviceDataMapper.deleteByPrimaryKey(id);
     }
 
-    @Override
-    public PageResponse<DeviceDataVo> getDeviceDataPage(Integer pageNum, Integer pageSize, Integer status, String deviceName, String accessLocation, Integer locationType, String functionId, LocalDateTime startTime, LocalDateTime endTime) {
-        PageHelper.startPage(pageNum, pageSize);
-        Page<DeviceDataVo> page = deviceDataMapper.page(status, deviceName, accessLocation, locationType, functionId, startTime, endTime);
-        return PageResponse.of(page, DeviceDataVo.class);
-    }
-
-    @Override
-    public PageResponse<DeviceDataVo> getDeviceWeekDataPage(Integer pageNum, Integer pageSize, Integer status, String deviceName, String accessLocation, Integer locationType, String functionId, LocalDateTime startTime, LocalDateTime endTime) {
-        PageHelper.startPage(pageNum, pageSize);
-        Page<DeviceDataVo> page = deviceDataMapper.pageWeek(status, deviceName, accessLocation, locationType, functionId, startTime, endTime);
-        return PageResponse.of(page, DeviceDataVo.class);
-    }
 }

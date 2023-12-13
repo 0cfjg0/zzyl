@@ -3,17 +3,12 @@ package com.zzyl.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.json.JSONUtil;
-import com.zzyl.constant.Constants;
 import com.zzyl.dto.RoomDto;
 import com.zzyl.entity.Room;
 import com.zzyl.mapper.RoomMapper;
 import com.zzyl.service.BedService;
 import com.zzyl.service.RoomService;
-import com.zzyl.utils.StringUtils;
 import com.zzyl.vo.BedVo;
-import com.zzyl.vo.DeviceDataVo;
-import com.zzyl.vo.DeviceVo;
 import com.zzyl.vo.RoomVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,53 +134,6 @@ public class RoomServiceImpl implements RoomService {
             return new HashMap<>();
         }
         return roomMapper.countRoomByTypeName(collect);
-    }
-
-    @Override
-    public List<RoomVo> getRoomsWithDeviceByFloorId(Long floorId) {
-        //根据楼层ID查询包含的设备（房间 | 床位）
-        List<RoomVo> roomVos = roomMapper.selectByFloorIdWithDevice(floorId);
-        return roomVos.stream().map(roomVo -> {
-            //获取楼层中的所有房间设备数据
-            List<DeviceVo> devices = roomVo.getDeviceVos();
-            if (CollUtil.isNotEmpty(devices)) {
-                devices.forEach(deviceVo -> {
-                    //根据设备ID查询缓存
-                    String deviceLastDataJson = (String) redisTemplate.opsForHash().get("deviceLastData", deviceVo.getDeviceId());
-                    if (StringUtils.isEmpty(deviceLastDataJson)) {
-                        return;
-                    }
-                    List<DeviceDataVo> list = JSONUtil.toList(deviceLastDataJson, DeviceDataVo.class);
-                    deviceVo.setDeviceDataVos(list);
-                    deviceVo.getDeviceDataVos().forEach(deviceDataVo -> {
-                        if (deviceDataVo.getStatus() > 0) {
-                            roomVo.setStatus(2);
-                        }
-                    });
-                });
-            }
-
-            //获取楼层中的所有房间中床位的设备数据
-            roomVo.getBedVoList().forEach(bedVo -> {
-                List<DeviceVo> deviceVos = bedVo.getDeviceVos();
-                deviceVos.forEach(deviceVo -> {
-                    //根据设备ID查询缓存
-                    String deviceLastDataJson = (String) redisTemplate.opsForHash().get(Constants.DEVICE_LASTDATA_CACHE_KEY, deviceVo.getDeviceId());
-                    if (StringUtils.isEmpty(deviceLastDataJson)) {
-                        return;
-                    }
-                    List<DeviceDataVo> list = JSONUtil.toList(deviceLastDataJson, DeviceDataVo.class);
-                    deviceVo.setDeviceDataVos(list);
-                    deviceVo.getDeviceDataVos().forEach(deviceDataVo -> {
-                        if (deviceDataVo.getStatus() > 0) {
-                            bedVo.setStatus(2);
-                            roomVo.setStatus(2);
-                        }
-                    });
-                });
-            });
-            return roomVo;
-        }).collect(Collectors.toList());
     }
 
     @Override

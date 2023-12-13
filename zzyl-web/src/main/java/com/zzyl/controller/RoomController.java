@@ -61,13 +61,6 @@ public class RoomController extends BaseController {
         return ResponseResult.success(roomService.getRoomsCheckedByFloorId(floorId));
     }
 
-
-    @GetMapping("/getRoomsWithDeviceByFloorId/{floorId}")
-    @ApiOperation("获取所有房间（智能床位）")
-    public ResponseResult<List<RoomVo>> getRoomsWithDeviceByFloorId(@PathVariable Long floorId) {
-        return ResponseResult.success(roomService.getRoomsWithDeviceByFloorId(floorId));
-    }
-
     @GetMapping("/getRoomsWithNurByFloorId/{floorId}")
     @ApiOperation("获取所有房间（负责老人）")
     public ResponseResult<List<RoomVo>> getRoomsWithNurByFloorId(@PathVariable Long floorId) {

@@ -219,43 +219,6 @@
         </collection>
     </resultMap>
 
-    <select id="selectByFloorIdWithDevice" resultMap="roomVoWithDeviceResultMap">
-        select r.*,
-               b.id            as bid,
-               b.bed_number,
-               b.sort,
-               b.bed_status,
-               b.room_id,
-               b.create_by,
-               b.update_by,
-               b.remark,
-               b.create_time,
-               b.update_time,
-               e.name          as ename,
-               e.id            as eid,
-               d.id            as r_did,
-               d.device_id,
-               d.product_id    as product_key,
-               d.device_name,
-               d.produce_name,
-               db.id           as b_did,
-               db.device_id    as b_device_id,
-               db.product_id   as b_product_key,
-               db.device_name  as b_device_name,
-               db.produce_name as b_produce_name
-        from room r
-                 left join bed b on b.room_id = r.id
-                 left join elder e on e.bed_id = b.id
-                 left join device d
-                           on d.binding_location = r.id and d.location_type = 1 and d.physical_location_type = 1
-                 left join device db
-                           on db.binding_location = b.id and db.location_type = 1 and db.physical_location_type = 2
-        where r.floor_id = #{floorId}
-          and (d.id is not null or db.id is not null)
-        order by r.sort, r.create_time desc
-    </select>
-
-
     <select id="selectRoomsCheckedByFloorId" resultMap="roomVoResultMap">
         select r.*,
                f.name  as fname,
