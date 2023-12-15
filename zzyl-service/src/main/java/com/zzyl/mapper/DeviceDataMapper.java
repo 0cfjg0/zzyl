@@ -27,6 +27,4 @@ public interface DeviceDataMapper {
 
     int batchInsert(@Param("list") List<DeviceData> list);
 
-    @Delete("delete from device_data where status != 2")
-    void clearDeviceDataJob();
 }
