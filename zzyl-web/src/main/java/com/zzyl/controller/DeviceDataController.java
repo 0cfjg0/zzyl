@@ -49,18 +49,18 @@ public class DeviceDataController {
         return ResponseResult.success();
     }
 
-    @GetMapping("/get-page")
-    @ApiOperation(value = "获取设备数据分页结果", notes = "接收包含分页信息的请求参数，返回一个包含分页数据的Page<DeviceDataDto>对象")
-    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceDataPage(
-            @ApiParam(value = "页码", required = true) @RequestParam("pageNum") Integer pageNum,
-            @ApiParam(value = "每页大小", required = true) @RequestParam("pageSize") Integer pageSize,
-            @ApiParam(value = "设备名称") @RequestParam(value = "deviceName", required = false) String deviceName,
-            @ApiParam(value = "接入位置") @RequestParam(value = "accessLocation", required = false) String accessLocation,
-            @ApiParam(value = "位置类型") @RequestParam(value = "accessLocation", required = false) Integer locationType,
-            @ApiParam(value = "功能ID") @RequestParam(value = "functionId", required = false) String functionId,
-            @ApiParam(value = "开始时间")  @RequestParam(required = false) Long startTime,
-            @ApiParam(value = "结束时间")  @RequestParam(required = false) Long endTime,
-            @ApiParam(value = "状态 0 正常 1 异常 2待处理 3已处理")  @RequestParam(required = false) Integer status) {
-        return ResponseResult.success(deviceDataService.getDeviceDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType, functionId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime)));
-    }
+//    @GetMapping("/get-page")
+//    @ApiOperation(value = "获取设备数据分页结果", notes = "接收包含分页信息的请求参数，返回一个包含分页数据的Page<DeviceDataDto>对象")
+//    public ResponseResult<PageResponse<DeviceDataVo>> getDeviceDataPage(
+//            @ApiParam(value = "页码", required = true) @RequestParam("pageNum") Integer pageNum,
+//            @ApiParam(value = "每页大小", required = true) @RequestParam("pageSize") Integer pageSize,
+//            @ApiParam(value = "设备名称") @RequestParam(value = "deviceName", required = false) String deviceName,
+//            @ApiParam(value = "接入位置") @RequestParam(value = "accessLocation", required = false) String accessLocation,
+//            @ApiParam(value = "位置类型") @RequestParam(value = "accessLocation", required = false) Integer locationType,
+//            @ApiParam(value = "功能ID") @RequestParam(value = "functionId", required = false) String functionId,
+//            @ApiParam(value = "开始时间")  @RequestParam(required = false) Long startTime,
+//            @ApiParam(value = "结束时间")  @RequestParam(required = false) Long endTime,
+//            @ApiParam(value = "状态 0 正常 1 异常 2待处理 3已处理")  @RequestParam(required = false) Integer status) {
+//        return ResponseResult.success(deviceDataService.getDeviceDataPage(pageNum, pageSize, status, deviceName, accessLocation, locationType, functionId, ObjectUtil.isEmpty(startTime)? null : LocalDateTimeUtil.of(startTime), ObjectUtil.isEmpty(endTime)? null : LocalDateTimeUtil.of(endTime)));
+//    }
 }

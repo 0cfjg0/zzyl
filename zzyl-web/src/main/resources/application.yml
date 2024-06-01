@@ -89,10 +89,10 @@ zzyl:
       base64-encoded-secret-key: $2a$10$PVtHnkj86mJgf6li/yron.LRx/cQAlaiZkBJ9BeogCNTryXJRT1YC
       ttl: 3600000
     oss:
-      endpoint: oss-cn-beijing.aliyuncs.com
-      accessKeyId: LTAI5tDQKg9F61aJhbmhqVRK
-      accessKeySecret: LYUKZH7HQGBoD025pmSq0fQsREaOYD
-      bucketName: itheim
+      endpoint: https://oss-cn-shanghai.aliyuncs.com
+      accessKeyId: LTAI5tHBJ1Hd1xAnMKA3PSHq
+      accessKeySecret: IDNwmWZS0PougllvlkVFZHl49BMgkT
+      bucketName: cfjg-pro
 #      endpoint: oss-cn-hangzhou.aliyuncs.com
 #      accessKeyId: LTAI5tAfMysPZnGhtU4XtfGQ
 #      accessKeySecret: pLt9Q2btW3kXbzXIVN0qQN0Ry9K6fE

@@ -25,7 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-@Component
+//@Component
 public class AmqpClient implements ApplicationRunner {
     private final static Logger logger = LoggerFactory.getLogger(AmqpClient.class);
 

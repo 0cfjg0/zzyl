@@ -1,5 +1,61 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.zzyl.mapper.NursingProjectMapper">
+    <delete id="deleteProject">
+        delete from nursing_project where id = #{id}
+    </delete>
 
+    <select id="selectNursing" resultType="com.zzyl.entity.NursingProject">
+        SELECT p.id, p.name, p.order_no, p.unit, p.price, p.image, p.nursing_requirement, p.status, p.create_by,
+               p.update_by, p.remark, p.create_time, p.update_time
+                , s.real_name AS creator
+        FROM nursing_project p
+        Inner JOIN sys_user s ON p.create_by = s.id
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE concat('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        order by p.order_no,p.create_time
+    </select>
+
+    <insert id="addNewNursingProject">
+        insert into nursing_project(name, order_no, unit, price, image, nursing_requirement, status, create_by, update_by,
+                                    remark, create_time, update_time)
+        values (
+                   #{name},#{orderNo},#{unit},#{price},#{image},#{nursingRequirement},#{status},#{createBy},#{updateBy},#{remark},#{createTime},#{updateTime}
+               )
+    </insert>
+
+    <select id="selectByID" resultType="com.zzyl.entity.NursingProject">
+        select * from nursing_project p where id = #{id}
+    </select>
+
+    <update id="updateByID" parameterType="com.zzyl.entity.NursingProject">
+        UPDATE nursing_project
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="orderNo != null">order_no = #{orderNo},</if>
+            <if test="unit != null">unit = #{unit},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="image != null">image = #{image},</if>
+            <if test="nursingRequirement != null">nursing_requirement = #{nursingRequirement},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="changeStatus">
+        update nursing_project
+        <set>
+                status = #{status}
+        </set>
+    where id = #{id}
+    </update>
 </mapper>
