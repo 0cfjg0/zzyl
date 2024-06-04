@@ -5,6 +5,8 @@ import com.zzyl.base.ResponseResult;
 import com.zzyl.controller.BaseController;
 import com.zzyl.dto.ReservationDto;
 import com.zzyl.service.ReservationService;
+import com.zzyl.utils.ObjectUtil;
+import com.zzyl.utils.UserThreadLocal;
 import com.zzyl.vo.ReservationVo;
 import com.zzyl.vo.TimeCountVo;
 import io.swagger.annotations.Api;
@@ -14,6 +16,9 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -27,22 +32,36 @@ public class CustomerReservationController extends BaseController {
     @GetMapping("/countByTime")
     @ApiOperation("查询每个时间段剩余预约次数")
     public ResponseResult<List<TimeCountVo>> countReservationsForEachTimeWithinTimeRange(@RequestParam(required = false) Long time) {
-        //TODO 待实现
-        return null;
+        Instant instant = Instant.ofEpochMilli(time);
+        LocalDateTime ldt = LocalDateTime.ofInstant(instant,ZoneId.systemDefault());
+        List<TimeCountVo> responseResult;
+        try {
+            responseResult = reservationService.countReservationsForEachTimeWithinTimeRange(ldt);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error("查询失败");
+        }
+        return ResponseResult.success(responseResult);
     }
 
     @GetMapping("/cancelled-count")
     @ApiOperation("查询取消预约数量")
     public ResponseResult<Integer> getCancelledReservationCount() {
-        //TODO 待实现
-        return success(0);
+        Long userId = UserThreadLocal.getUserId();
+        int num = reservationService.getCancelledReservationCount(userId);
+        return success(num);
     }
 
     @PostMapping
     @ApiOperation("新增预约")
     public ResponseResult<Void> add(@RequestBody ReservationDto dto) {
-        //TODO 待实现
-        return null;
+        try {
+            reservationService.add(dto);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error("预约失败");
+        }
+        return ResponseResult.success();
     }
 
 
@@ -75,16 +94,38 @@ public class CustomerReservationController extends BaseController {
                                                                   @RequestParam(required = false) Integer type,
                                                                   @RequestParam(required = false) Long startTime,
                                                                   @RequestParam(required = false) Long endTime) {
-        //TODO 待实现
-        return null;
+        //分页查询预约
+        LocalDateTime startldt = null;
+        LocalDateTime endldt = null;
+        if (!ObjectUtil.isEmpty(startTime) && !ObjectUtil.isEmpty(endTime)) {
+            // 将时间戳转换为Instant对象
+            Instant startInstant = Instant.ofEpochMilli(startTime);
+            Instant endInstant = Instant.ofEpochMilli(endTime);
+            // 将Instant对象转换为本地时间
+            startldt = LocalDateTime.ofInstant(startInstant, ZoneId.systemDefault());
+            endldt = LocalDateTime.ofInstant(endInstant, ZoneId.systemDefault());
+            System.out.println(startldt+"-------------------"+endldt);
+        }
+        PageResponse<ReservationVo> res = null;
+        try {
+            res = reservationService.findByPage(pageNum,pageSize,name,phone,status,type,startldt,endldt);
+        } catch (Exception e) {
+            return ResponseResult.error("查询失败");
+        }
+        return ResponseResult.success(res);
     }
 
 
     @PutMapping("/{id}/cancel")
     @ApiOperation("取消预约")
     public ResponseResult<Void> cancel(@PathVariable Long id) {
-        //TODO 待实现
-        return null;
+        try {
+            reservationService.cancelReservation(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error("取消失败");
+        }
+        return ResponseResult.success();
     }
 
 }

@@ -19,9 +19,33 @@
         id, phone, name, avatar, open_id, gender, create_by, update_by,create_time
     </sql>
 
-    <!-- TODO 待实现 -->
+    <!-- 新增一条数据 -->
+    <insert id="save" parameterType="com.zzyl.entity.Member" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (phone, name, avatar, open_id, gender, create_time, update_time, create_by, update_by, remark)
+        VALUES (#{phone}, #{name}, #{avatar}, #{openId}, #{gender}, #{createTime}, #{updateTime}, #{createBy}, #{updateBy}, #{remark})
+    </insert>
 
+    <!-- 根据主键id更新数据，更新时对参数是否为空做校验 -->
+    <update id="update" parameterType="com.zzyl.entity.Member" useGeneratedKeys="true" keyProperty="id">
+        UPDATE member
+        <set>
+            <if test="phone != null and phone.trim() ne ''">phone = #{phone},</if>
+            <if test="name != null and name.trim() ne ''">name = #{name},</if>
+            <if test="avatar != null and avatar.trim() ne ''">avatar = #{avatar},</if>
+            <if test="openId != null and openId.trim() ne ''">open_id = #{openId},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null and remark.trim() ne ''">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据open_id查询数据 -->
+    <select id="getByOpenId" resultMap="BaseResultMap" parameterType="java.lang.String">
+        SELECT <include refid="Base_Column_List"/>
+        FROM member
+        WHERE open_id = #{openId}
+    </select>
 
 </mapper>
-
-

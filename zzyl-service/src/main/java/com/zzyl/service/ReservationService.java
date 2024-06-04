@@ -92,4 +92,5 @@ public interface ReservationService {
     void visit(Long id, Long time);
 
     void updateReservationStatus(LocalDateTime now);
+
 }

@@ -17,6 +17,67 @@
         <result column="creator" property="creator"/>
     </resultMap>
 
+    <!--新增预约-->
+    <insert id="insert" parameterType="com.zzyl.entity.Reservation" useGeneratedKeys="true" keyProperty="id">
+        insert into reservation(name, mobile, time, visitor, type, status, create_by, remark, create_time)
+        values (#{name}, #{mobile}, #{time}, #{visitor}, #{type}, #{status}, #{createBy}, #{remark}, #{createTime})
+    </insert>
+
+    <!-- 更新预约信息 -->
+    <update id="update" parameterType="com.zzyl.entity.Reservation">
+        update reservation
+        <set>
+            name = #{name},
+            mobile = #{mobile},
+            time = #{time},
+            visitor = #{visitor},
+            type = #{type},
+            status = #{status},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--    分页查询-->
+    <select id="findByPage" resultType="com.zzyl.entity.Reservation">
+        select * from reservation
+        <where>
+            <if test="status != null">
+                status = #{status}
+            </if>
+            and create_by = #{createBy}
+        </where>
+    </select>
+
+    <!--    查询取消次数-->
+    <select id="countCancelledReservationsWithinTimeRange" resultType="java.lang.Integer">
+        select count(*) from reservation
+        <where>
+            (update_time is null or update_time between #{startTime} and #{endTime})
+            and create_by = #{updateBy}
+            and status = 2
+        </where>
+    </select>
+
+    <select id="findById" resultType="com.zzyl.entity.Reservation">
+        select *
+        from reservation
+        <where>
+            id = #{id}
+        </where>
+    </select>
+
+    <select id="countReservationsForEachTimeWithinTimeRange" resultType="java.lang.Integer">
+        select count(*) from reservation
+        <where>
+            (time between #{startTime} and #{endTime})
+            and create_by = #{createBy}
+            and status = 0
+        </where>
+    </select>
+
     <!-- TODO 待实现 -->
 
 </mapper>

@@ -74,10 +74,10 @@ public class NursingProjectController {
      * @param nursingProjectDto 要更新的护理项目信息
      * @return 更新后的护理项目信息
      */
-    @PutMapping("")
+    @PutMapping("/{id}")
     @ApiOperation("更新护理项目")
-    public ResponseResult<Void> updateByID(@RequestBody NursingProjectDto nursingProjectDto){
-        nursingProjectService.updateByID(nursingProjectDto);
+    public ResponseResult<Void> updateByID(@RequestBody NursingProjectDto nursingProjectDto,@PathVariable Long id){
+        nursingProjectService.updateByID(nursingProjectDto,id);
         return ResponseResult.success();
     }
 

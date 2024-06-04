@@ -24,4 +24,6 @@ public interface WechatService {
      * @return 唯一标识
      */
     String getPhone(String code);
+
+    String getToken();
 }

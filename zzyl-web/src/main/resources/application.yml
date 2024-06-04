@@ -32,6 +32,7 @@ spring:
     host: 192.168.200.146
     port: 6379
     password: kK6/fG8&pN7<
+    database: 0
   activiti:
     #是否让activiti自动创建所有的历史表
     history-level: full
@@ -89,25 +90,25 @@ zzyl:
       base64-encoded-secret-key: $2a$10$PVtHnkj86mJgf6li/yron.LRx/cQAlaiZkBJ9BeogCNTryXJRT1YC
       ttl: 3600000
     oss:
-      endpoint: https://oss-cn-shanghai.aliyuncs.com
-      accessKeyId: LTAI5tHBJ1Hd1xAnMKA3PSHq
-      accessKeySecret: IDNwmWZS0PougllvlkVFZHl49BMgkT
+      endpoint: oss-cn-shanghai.aliyuncs.com
+      accessKeyId: LTAI5tJFjM1hG2ELnC4yBbCi
+      accessKeySecret: NSn7j8fnASsfs7RK1KZV8i5Mj6HxCc
       bucketName: cfjg-pro
 #      endpoint: oss-cn-hangzhou.aliyuncs.com
 #      accessKeyId: LTAI5tAfMysPZnGhtU4XtfGQ
 #      accessKeySecret: pLt9Q2btW3kXbzXIVN0qQN0Ry9K6fE
 #      bucketName: yjy-slwl-oss
   wechat:
-    appId: wxfd261501ecc56ef4
-    appSecret: 88aec7554fd74390e55a458aaea2cba6
-#  wechat:
-#    appId: wxa37ad44a9d9ab836
-#    appSecret: 85ef0e856bafed3eb55e279c3a48fa49
+    appId: wx49b3b8829043c593
+    appSecret: d21a9f48404e561ba246fd8b59e98684
+  #  wechat:
+  #    appId: wxa37ad44a9d9ab836
+  #    appSecret: 85ef0e856bafed3eb55e279c3a48fa49
   aliyun:
     accessKeyId: LTAI5tDQKg9F61aJhbmhqVRK
     accessKeySecret: LYUKZH7HQGBoD025pmSq0fQsREaOYD
     consumerGroupId: DEFAULT_GROUP
-#    consumerGroupId: 0CP9WrqP8Q1lLaWFjli9000100
+    #    consumerGroupId: 0CP9WrqP8Q1lLaWFjli9000100
     regionId: cn-shanghai
     iotInstanceId: iot-06z00frq8umvkx2
     host: iot-06z00frq8umvkx2.amqp.iothub.aliyuncs.com

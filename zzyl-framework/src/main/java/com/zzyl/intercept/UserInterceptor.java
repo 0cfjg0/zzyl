@@ -1,7 +1,16 @@
 package com.zzyl.intercept;
 
+import cn.hutool.core.map.MapUtil;
+import com.zzyl.constant.Constants;
+import com.zzyl.constant.SecurityConstant;
+import com.zzyl.exception.BaseException;
 import com.zzyl.properties.JwtTokenManagerProperties;
+import com.zzyl.utils.JwtUtil;
+import com.zzyl.utils.ObjectUtil;
+import com.zzyl.utils.UserThreadLocal;
+import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -21,14 +30,33 @@ import javax.servlet.http.HttpServletResponse;
 @EnableConfigurationProperties(JwtTokenManagerProperties.class)
 public class UserInterceptor implements HandlerInterceptor {
 
+    @Autowired
+    JwtTokenManagerProperties jwtTokenManagerProperties;
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        //TODO 待实现
+        //获取请求头中的token
+        String token = request.getHeader(SecurityConstant.USER_TOKEN);
+        BaseException exception = new BaseException("小程序登录", "401", null, "没有权限,请登录");
+        if(ObjectUtil.isEmpty(token)){
+            throw exception;
+        }
+
+        //解析token,保证合法
+        Claims claims = JwtUtil.parseJWT(this.jwtTokenManagerProperties.getBase64EncodedSecretKey(), token);
+        if(ObjectUtil.isEmpty(claims)){
+            throw exception;
+        }
+        Long userId = MapUtil.get(claims, Constants.JWT_USERID,Long.class);
+        //将数据存入线程(即现在的请求)
+        UserThreadLocal.set(userId);
+
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        //TODO 待实现
+        //将线程中的数据删除
+        UserThreadLocal.remove();
     }
 }

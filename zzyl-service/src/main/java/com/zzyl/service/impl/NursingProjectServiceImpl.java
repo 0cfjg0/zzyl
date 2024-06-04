@@ -48,8 +48,9 @@ public class NursingProjectServiceImpl implements NursingProjectService {
     }
 
     @Override
-    public void updateByID(NursingProjectDto nursingProjectDto) {
+    public void updateByID(NursingProjectDto nursingProjectDto,Long id) {
         NursingProject nursingProject = BeanUtil.toBean(nursingProjectDto,NursingProject.class);
+        nursingProject.setId(id);
         nursingProjectMapper.updateByID(nursingProject);
     }
 

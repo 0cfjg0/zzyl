@@ -1,16 +1,27 @@
 package com.zzyl.service.impl;
 
+import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.google.common.collect.Lists;
 import com.zzyl.base.PageResponse;
+import com.zzyl.constant.Constants;
 import com.zzyl.dto.UserLoginRequestDto;
 import com.zzyl.entity.Member;
+import com.zzyl.mapper.MemberMapper;
+import com.zzyl.properties.JwtTokenManagerProperties;
 import com.zzyl.service.MemberService;
+import com.zzyl.service.WechatService;
+import com.zzyl.utils.JwtUtil;
+import com.zzyl.utils.ObjectUtil;
 import com.zzyl.vo.LoginVo;
 import com.zzyl.vo.MemberVo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * 用户管理
@@ -30,6 +41,17 @@ public class MemberServiceImpl implements MemberService {
                     "杨梅吐气",
                     "天生荔枝"
                     );
+
+    @Resource
+    WechatService wechatService;
+
+
+    @Resource
+    MemberMapper memberMapper;
+
+    @Resource
+    JwtTokenManagerProperties jwtTokenManagerProperties;
+
     /**
      * 新增
      * @param member 用户信息
@@ -47,8 +69,7 @@ public class MemberServiceImpl implements MemberService {
      */
     @Override
     public Member getByOpenid(String openId) {
-        //TODO 待实现
-        return null;
+        return memberMapper.getByOpenId(openId);
     }
 
     /**
@@ -59,8 +80,30 @@ public class MemberServiceImpl implements MemberService {
      */
     @Override
     public LoginVo login(UserLoginRequestDto userLoginRequestDto) {
-        //TODO 待实现
-        return null;
+        String openId = wechatService.getOpenid(userLoginRequestDto.getCode());
+        String phoneNumber = wechatService.getPhone(userLoginRequestDto.getPhoneCode());
+        Member member = this.getByOpenid(openId);
+        if(ObjectUtil.isEmpty(member)){
+            //新增
+            //生成昵称
+            String nickname = (String) RandomUtil.randomEle(DEFAULT_NICKNAME_PREFIX);
+            nickname = new StringBuffer(nickname).append(phoneNumber.substring(7)).toString();
+            member = Member.builder().openId(openId).name(nickname).phone(phoneNumber).build();
+            this.memberMapper.save(member);
+        }else if(ObjectUtil.notEqual(member.getPhone(),phoneNumber)){
+            //更新
+            member.setPhone(phoneNumber);
+            this.memberMapper.update(member);
+        }
+
+        //将得到的用户id和用户名字存入token
+        Map<String,Object> claims = MapUtil.<String,Object>builder()
+                .put(Constants.JWT_USERID,member.getId())
+                .put(Constants.JWT_USERNAME,member.getName())
+                .build();
+        String token = JwtUtil.createJWT(jwtTokenManagerProperties.getBase64EncodedSecretKey(),
+                this.jwtTokenManagerProperties.getTtl(),claims);
+        return new LoginVo(token,member.getName());
     }
 
     /**

@@ -2,6 +2,7 @@ package com.zzyl.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
@@ -12,6 +13,7 @@ import lombok.Data;
  * @date: 2022/12/28 10:10
  */
 @Data
+@AllArgsConstructor
 @ApiModel(value = "登录对象")
 public class LoginVo {
 

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 
 /**
  * 护理项目Service接口
@@ -22,7 +23,7 @@ public interface NursingProjectService {
 
     NursingProjectVo getByID(Integer id);
 
-    void updateByID(NursingProjectDto nursingProjectDto);
+    void updateByID(NursingProjectDto nursingProjectDto,Long id);
 
     void changeStatus(Integer id,Integer status);
 
