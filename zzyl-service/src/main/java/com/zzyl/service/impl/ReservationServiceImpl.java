@@ -154,7 +154,9 @@ public class ReservationServiceImpl implements ReservationService {
             int count = reservationMapper.countReservationsForEachTimeWithinTimeRange(time, time.plusMinutes(30), UserThreadLocal.getUserId(), 0);
             temp.setCount(6-count);
             temp.setTime(time);
-            list.add(temp);
+            if (temp.getCount()!=6) {
+                list.add(temp);
+            }
             time = time.plusMinutes(30);
             //跳过12:30
             if(time.getHour() == 12 && time.getMinute() == 0){
