@@ -43,4 +43,20 @@ public class ActivitiDeploymentTest {
         System.out.println(deployment.getId());
         System.out.println(deployment.getName());
     }
+
+
+    @Test
+    public void testDeployment(){
+
+        String fileName = "bpmn/diagramZzyl.bpmn";
+        //定义流程
+        Deployment deployment = repositoryService.createDeployment()
+                .addClasspathResource(fileName)
+                .addClasspathResource("diagramZzyl.png")
+                .name("checkIn")
+                .deploy();
+        //部署流程
+        System.out.println(deployment.getId());
+        System.out.println(deployment.getName());
+    }
 }

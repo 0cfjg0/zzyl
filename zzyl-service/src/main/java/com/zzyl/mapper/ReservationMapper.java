@@ -36,6 +36,7 @@ public interface ReservationMapper {
     //查询取消次数
     int countCancelledReservationsWithinTimeRange(@Param("startTime") LocalDateTime startTime, @Param("endTime") LocalDateTime endTime, @Param("updateBy") Long updateBy);
 
+    //设置预约过期
     void updateReservationStatus(@Param("minusDays")LocalDateTime minusDays);
 
 }

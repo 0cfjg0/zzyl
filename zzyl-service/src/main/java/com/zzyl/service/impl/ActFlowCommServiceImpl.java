@@ -2,8 +2,13 @@ package com.zzyl.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zzyl.base.PageResponse;
+import com.zzyl.constant.Constants;
+import com.zzyl.constant.PendingTasksConstant;
 import com.zzyl.dto.PendingTasksDto;
 import com.zzyl.entity.*;
 import com.zzyl.mapper.HiActinstMapper;
@@ -18,7 +23,10 @@ import org.activiti.engine.TaskService;
 import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.history.HistoricActivityInstanceQuery;
 import org.activiti.engine.history.HistoricTaskInstance;
+import org.activiti.engine.history.HistoricTaskInstanceQuery;
+import org.activiti.engine.impl.identity.Authentication;
 import org.activiti.engine.repository.Deployment;
+import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskInfo;
 import org.activiti.engine.task.TaskQuery;
@@ -109,12 +117,73 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     @Override
     public void completeProcess(String title, String taskId, String userId, Integer code, Integer status) {
-        //TODO 待实现
+        //任务Id 查询任务对象
+        Task task = this.taskService.createTaskQuery().taskId(taskId).singleResult();
+        if (ObjectUtil.isEmpty(task)) {
+            log.error("completeProcess - task is null!!");
+            return;
+        }
+        //任务对象  获取流程实例Id
+        String processInstanceId = task.getProcessInstanceId();
+        //防止activiti报权限错误
+        Authentication.setAuthenticatedUserId(userId);
+
+        //在驳回场景下，养老顾问和护理主管执行过的历史记录没有必要在存储，否则会在页面中出现重复数据，影响用户体验
+        HistoricTaskInstanceQuery historicTaskInstanceQuery = historyService.createHistoricTaskInstanceQuery().processInstanceId(processInstanceId);
+        List<HistoricTaskInstance> list = historicTaskInstanceQuery.list();
+        if (CollUtil.isNotEmpty(list)) {
+            list.forEach(v -> {
+                if (ObjectUtil.equals(Convert.toStr((Convert.toInt(task.getFormKey()) + 1)), v.getFormKey())) {
+                    historyService.deleteHistoricTaskInstance(v.getId());
+                }
+                if (ObjectUtil.equals(code, 3) && ObjectUtil.equals("0", v.getFormKey())) {
+                    historyService.deleteHistoricTaskInstance(v.getId());
+                }
+            });
+        }
+        //完成办理
+        Map<String, Object> variables = new HashMap<>();
+        if (ObjectUtil.isNotEmpty(status)) {
+            variables.put("processStatus", status);
+        }
+        if (ObjectUtil.isNotEmpty(title)) {
+            variables.put("processTitle", title);
+        }
+        variables.put("ops", code);
+        this.taskService.complete(taskId, variables);
     }
 
     @Override
-    public void start(Long id, String formKey, User user, Map<String, Object> variables, boolean autoFinished) {
-        //TODO 待实现
+    public void start(Long id, String processKey, User user, Map<String, Object> map, boolean autoFinished) {
+        //以流程id:id的拼接格式作为businessKey
+        String businessKey = StrUtil.format("{}:{}", processKey, id);
+        map.put("businessKey",businessKey);
+        //启动流程实例
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(processKey, businessKey, map);
+        //判断是否自动完成
+        if(!autoFinished){
+            return;
+        }else{
+            //自动完成流程的第一个任务
+            String processInstanceId = processInstance.getProcessInstanceId();
+            //获取任务列表
+            List<Map<String,Object>> tasklist = myTaskList(user.getId().toString());
+            Map<String,Object> taskMap = tasklist.stream()
+                    //找到任务列表中和本流程id一致的任务
+                    .filter(map1 -> MapUtil.getStr(map1,"processInstance") == processInstanceId)
+                    //代理人保持一致
+                    .filter(map1 -> MapUtil.getStr(map1,"assignee") == user.getId().toString())
+                    //得到列表中的第一个
+                    .findFirst()
+                    .get();
+            String taskId = MapUtil.getStr(taskMap,"taskId");
+//            taskService.createTaskQuery()
+//                        .processInstanceId(processInstanceId)
+//                        .taskAssignee(user.getId().toString())
+//                        .singleResult();
+            //完成任务
+            completeProcess(null, taskId, Convert.toStr(user.getId()),1, PendingTasksConstant.TASK_STATUS_APPLICATION);
+        }
     }
 
     /**

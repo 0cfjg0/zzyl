@@ -50,18 +50,31 @@ public class AccraditationRecordServiceImpl implements AccraditationRecordServic
     @Override
     public void insert(RecoreVo recoreVo) {
         //记录操作记录
+        //入退住记录实体类
         AccraditationRecord accraditationRecord = new AccraditationRecord();
+        //审批人id
         accraditationRecord.setApproverId(recoreVo.getUserId());
+        //记录id
         accraditationRecord.setBussniessId(recoreVo.getId());
+        //创建时间
         accraditationRecord.setCreateTime(LocalDateTime.now());
+        //类型：（1:退住  2:请假  3:入住）
         accraditationRecord.setType(recoreVo.getType());
+        //审核意见
         accraditationRecord.setOpinion(recoreVo.getOption());
+        //审批人=当前登录用户的真实姓名
         accraditationRecord.setApproverName(recoreVo.getRealName());
+        //审核步骤
         accraditationRecord.setCurrentStep(recoreVo.getStep());
+        //审核状态
         accraditationRecord.setAuditStatus(recoreVo.getStatus());
+        //处理类型（0:已审批，1：已处理
         accraditationRecord.setHandleType(recoreVo.getHandleType());
+        //审核步骤
+        //boundValueOps 将对象绑定一个键
+        //键的名字为 Record[业务id(入住id)]
+        //.increment()自增方法将这个键的值做自增(如果不存在就先置零再自增) -> 对对应键的值做自增
         accraditationRecord.setStepNo(redisTemplate.boundValueOps(RECORD_STEP_NO_PRE + recoreVo.getId()).increment());
-
         if (ObjectUtil.isNotEmpty(recoreVo.getNextAssignee())) {
             //查询下一个审核人的姓名和角色
             List<UserRoleVo> userRoleVoList = userRoleMapper.selectByUserId(recoreVo.getNextAssignee());

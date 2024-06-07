@@ -39,9 +39,9 @@ public class CheckIn extends BaseEntity {
 
     /**
      * 其他申请信息
-     */
-    @ApiModelProperty(value = "其他信息")
+     */ @ApiModelProperty(value = "其他信息")
     private String otherApplyInfo;
+
 
 
     /**

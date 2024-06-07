@@ -105,8 +105,8 @@ zzyl:
   #    appId: wxa37ad44a9d9ab836
   #    appSecret: 85ef0e856bafed3eb55e279c3a48fa49
   aliyun:
-    accessKeyId: LTAI5tDQKg9F61aJhbmhqVRK
-    accessKeySecret: LYUKZH7HQGBoD025pmSq0fQsREaOYD
+    accessKeyId: LTAI5tJFjM1hG2ELnC4yBbCi
+    accessKeySecret: NSn7j8fnASsfs7RK1KZV8i5Mj6HxCc
     consumerGroupId: DEFAULT_GROUP
     #    consumerGroupId: 0CP9WrqP8Q1lLaWFjli9000100
     regionId: cn-shanghai

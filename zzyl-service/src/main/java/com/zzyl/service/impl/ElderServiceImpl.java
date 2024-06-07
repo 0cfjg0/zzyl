@@ -7,6 +7,7 @@ import com.github.pagehelper.PageHelper;
 import com.zzyl.base.PageResponse;
 import com.zzyl.dto.ElderDto;
 import com.zzyl.dto.NursingElderDto;
+import com.zzyl.entity.CheckIn;
 import com.zzyl.entity.Elder;
 import com.zzyl.entity.NursingElder;
 import com.zzyl.mapper.ElderMapper;
@@ -49,19 +50,19 @@ public class ElderServiceImpl implements ElderService {
      */
     @Override
     public Elder insert(ElderDto elderDto) {
-        Elder elder = BeanUtil.toBean(elderDto, Elder.class);
-        elder.setStatus(4);
-        elder.setRemark("0");
         ElderVo elderVo = selectByIdCardAndName(elderDto.getIdCardNo(), elderDto.getName());
-        if (ObjectUtil.isNotEmpty(elderVo)) {
-            int i = Integer.parseInt(elderVo.getRemark()) + 1;
-            elder.setName(elder.getName() + i);
-            elderVo.setRemark(i + "");
-            Elder elder1 = BeanUtil.toBean(elderVo, Elder.class);
-            elderMapper.updateByPrimaryKeySelective(elder1);
+        if (ObjectUtil.isEmpty(elderVo)) {//新增
+            Elder elder = BeanUtil.toBean(elderDto, Elder.class);
+            elder.setStatus(1);
+            elder.setRemark("0");
+            elderMapper.insert(elder);
+            return elder;
         }
-        elderMapper.insert(elder);
-        return elder;
+        int i = Integer.parseInt(elderVo.getRemark()) + 1;
+        elderVo.setRemark(i + "");
+        Elder elder1 = BeanUtil.toBean(elderVo,Elder.class);
+        elderMapper.updateByPrimaryKeySelective(elder1);
+        return elder1;
     }
 
     /**

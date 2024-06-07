@@ -40,6 +40,12 @@
         where id = #{id}
     </update>
 
+    <update id="updateReservationStatus">
+        update reservation
+        set status = 3
+        where status = 0 and time &lt; #{minusDays}
+    </update>
+
     <!--    分页查询-->
     <select id="findByPage" resultType="com.zzyl.entity.Reservation">
         select * from reservation

@@ -195,7 +195,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void updateReservationStatus(LocalDateTime now) {
-        //TODO 待实现
+       reservationMapper.updateReservationStatus(now);
     }
 }
 
