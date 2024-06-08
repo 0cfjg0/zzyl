@@ -89,6 +89,7 @@ public class AccraditationRecordServiceImpl implements AccraditationRecordServic
             accraditationRecord.setNextStep(recoreVo.getNextStep());
         }
 
+        //以ip作为审核人角色
         String clientIP = ClientIpUtil.clientIp(request);
         accraditationRecord.setApproverNameRole(clientIP);
         //保存审核（操作）记录

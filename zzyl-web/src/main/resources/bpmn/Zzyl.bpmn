@@ -43,18 +43,18 @@
       <bpmn2:incoming>Flow_07vb93h</bpmn2:incoming>
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="Flow_006odqv" name="否,驳回申请" sourceRef="Gateway_0itcvl0" targetRef="Activity_0k24quk">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops=3}</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops==3}</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="Flow_0lfgz9n" name="否" sourceRef="Gateway_1hbkt8k" targetRef="Gateway_0itcvl0">
       <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops&gt;1}</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="Flow_1eqykmg" name="是" sourceRef="Gateway_1hbkt8k" targetRef="Activity_0zto4dk">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops=1}</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops==1}</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="Flow_1d9ka7l" sourceRef="Activity_0zto4dk" targetRef="Activity_06d2wrh" />
     <bpmn2:sequenceFlow id="Flow_1d5t4tf" sourceRef="Activity_06d2wrh" targetRef="Event_1aap2ih" />
     <bpmn2:sequenceFlow id="Flow_07vb93h" name="是,拒绝" sourceRef="Gateway_0itcvl0" targetRef="Event_1aap2ih">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops=2}</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression">${ops==2}</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="Flow_0qif14k" sourceRef="Activity_1nlitsl" targetRef="Gateway_1hbkt8k">
       <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression"></bpmn2:conditionExpression>

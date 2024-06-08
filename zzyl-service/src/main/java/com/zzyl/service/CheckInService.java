@@ -35,7 +35,7 @@ public interface CheckInService extends IActFlowCustomService {
      * @param id
      * @return
      */
-    ResponseResult<Void> submitCheckIn(Long id, String info, String taskId);
+    ResponseResult<CheckInVo> submitCheckIn(Long id, String info, String taskId);
 
     /**
      * 审核拒绝
@@ -44,7 +44,7 @@ public interface CheckInService extends IActFlowCustomService {
      * @param reject 拒绝原因
      * @return
      */
-    ResponseResult<Void> auditReject(Long id, String reject, String taskId);
+    ResponseResult<CheckInVo> auditReject(Long id, String reject, String taskId);
 
     /**
      * 撤回
@@ -91,7 +91,7 @@ public interface CheckInService extends IActFlowCustomService {
      * @param checkInDto
      * @return
      */
-    ResponseResult<Void> review(CheckInDto checkInDto);
+    ResponseResult<CheckInVo> review(CheckInDto checkInDto);
 
     /**
      * 入住配置

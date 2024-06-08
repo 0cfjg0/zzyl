@@ -10,7 +10,8 @@ public class WebSocketConfig {
     /**
      * 注册基于@ServerEndpoint声明的Websocket Endpoint
      */
-    @Bean
+    //@Bean
+    //todo websocket
     public ServerEndpointExporter serverEndpointExporter(){
         return new ServerEndpointExporter();
     }

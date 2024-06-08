@@ -5,12 +5,14 @@ import org.activiti.engine.repository.Deployment;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * @author sjqn
  * @date 2023/9/11
  */
 @SpringBootTest
+
 public class ActivitiDeploymentTest {
 
     @Autowired
@@ -46,14 +48,13 @@ public class ActivitiDeploymentTest {
 
 
     @Test
-    public void testDeployment(){
+    public void test(){
 
-        String fileName = "bpmn/diagramZzyl.bpmn";
+        String fileName = "bpmn/Zzyl.bpmn";
         //定义流程
         Deployment deployment = repositoryService.createDeployment()
                 .addClasspathResource(fileName)
-                .addClasspathResource("diagramZzyl.png")
-                .name("checkIn")
+                .name("入住申请流程")
                 .deploy();
         //部署流程
         System.out.println(deployment.getId());

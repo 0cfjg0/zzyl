@@ -3,8 +3,10 @@ package com.zzyl.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.PageUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zzyl.base.PageResponse;
 import com.zzyl.constant.Constants;
@@ -13,6 +15,8 @@ import com.zzyl.dto.PendingTasksDto;
 import com.zzyl.entity.*;
 import com.zzyl.mapper.HiActinstMapper;
 import com.zzyl.service.ActFlowCommService;
+import com.zzyl.utils.UserThreadLocal;
+import io.swagger.models.auth.In;
 import lombok.extern.slf4j.Slf4j;
 import org.activiti.bpmn.model.Process;
 import org.activiti.bpmn.model.*;
@@ -20,6 +24,7 @@ import org.activiti.engine.HistoryService;
 import org.activiti.engine.RepositoryService;
 import org.activiti.engine.RuntimeService;
 import org.activiti.engine.TaskService;
+
 import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.history.HistoricActivityInstanceQuery;
 import org.activiti.engine.history.HistoricTaskInstance;
@@ -31,6 +36,7 @@ import org.activiti.engine.task.Task;
 import org.activiti.engine.task.TaskInfo;
 import org.activiti.engine.task.TaskQuery;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -41,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -60,7 +67,13 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     @Override
     public Long getNextAssignee(String formKey, String businessKey) {
-        return 0L;
+        Task task = this.taskService.createTaskQuery()
+                .processDefinitionKey(formKey) //流程Key
+                .processInstanceBusinessKey(businessKey).singleResult();
+        if (ObjectUtil.isEmpty(task)) {
+            return null;
+        }
+        return Convert.toLong(task.getAssignee());
     }
 
     /**
@@ -111,9 +124,86 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     @Override
     public PageResponse<PendingTasks> myTaskInfoList(PendingTasksDto pendingTasksDto) {
-        //TODO 待实现
-        return null;
+        HistoricTaskInstanceQuery taskInfoQuery = historyService.createHistoricTaskInstanceQuery();
+
+        //设置参数
+        if (ObjectUtil.isNotEmpty(pendingTasksDto.getAssigneeId())) {
+            //查询我的待办(以代理人的id查询)
+            taskInfoQuery.taskAssignee(Convert.toStr(pendingTasksDto.getAssigneeId()));
+        }else{
+            //查询我的申请(以申请人的id查询)
+            taskInfoQuery.taskAssignee(Convert.toStr(pendingTasksDto.getApplicatId()));
+            //申请人id和流程参数中的申请人(agent0)相同
+            taskInfoQuery.processVariableValueEquals("agent0",pendingTasksDto.getApplicatId());
+        }
+
+        //页大小
+        Integer pageSize = pendingTasksDto.getPageSize();
+        //查询数据总数
+        long count = taskInfoQuery.count();
+        if(count == 0){
+            //返回一个定长的空list(用此法获得的空数组只能为空无需分配空间,可以节省内存)
+            return PageResponse.of(ListUtil.empty());
+        }
+        //总页数
+        long pages = PageUtil.totalPage(count,pageSize);
+
+        //传入页码-1,每页大小,得到需求页的数据起始索引
+        Integer firstPage = PageUtil.getStart(pendingTasksDto.getPageNum()-1,pageSize);
+        //查询得到一个任务list
+        List<HistoricTaskInstance> list = taskInfoQuery
+                //查询结果包含流程参数
+                .includeProcessVariables()
+                //已经完成的任务按照结束时间降序排序(后完成的任务(最新完成的任务)放在前面)
+                .orderByHistoricTaskInstanceEndTime().desc()
+                //还未完成的任务按照开始时间升序排序(开始时间早的任务放在前面)
+                .orderByHistoricTaskInstanceStartTime().asc()
+                //firstPage:索引,MaxResult:每页大小
+                .listPage(firstPage, pageSize);
+        //对list进行映射得到需要的待办任务list
+        List<PendingTasks> pendingTasksList = list.stream().map(task -> {
+            PendingTasks pendingTask = new PendingTasks();
+            //对list中的元素进行赋值
+            pendingTask.setId(task.getId());
+            pendingTask.setAssignee(task.getAssignee());
+            //从流程参数中获取流程状态
+            Map<String,Object> processVariables = task.getProcessVariables();
+            pendingTask.setCode(MapUtil.getStr(processVariables,"processCode"));//入住流程单号
+            pendingTask.setType(MapUtil.getInt(processVariables, "processType")); //类型
+            pendingTask.setTitle(MapUtil.getStr(processVariables, "processTitle")); //标题
+            pendingTask.setApplicat(MapUtil.getStr(processVariables, "agent0_name")); //申请人
+            pendingTask.setStatus(MapUtil.getInt(processVariables, "processStatus")); //状态
+            pendingTask.setAssigneeId(Convert.toLong(task.getAssignee())); //操作人ID
+
+            //从businessKey中取到入住数据id
+            String businessKey = MapUtil.getStr(processVariables,"businessKey");
+            //从businesskey中截取出入住数据id(String businessKey = StrUtil.format("{}:{}", PROCESS_DEFINITION_KEY, checkIn.getId());)
+            Long checkInID = Convert.toLong(StrUtil.subAfter(businessKey,":",true));
+            pendingTask.setCheckInId(checkInID);
+
+            //设置开始结束时间
+            //开始时间
+            LocalDateTime applicationTime = LocalDateTimeUtil.parse(MapUtil.getStr(processVariables,"applicationTime"));
+            pendingTask.setApplicationTime(applicationTime);
+            //如果任务状态不为1（1：申请中，2:已完成,3:已关闭）
+            if(ObjectUtil.notEqual(pendingTask.getStatus(),PendingTasksConstant.TASK_STATUS_APPLICATION)){
+                LocalDateTime finishTime = LocalDateTimeUtil.parse(MapUtil.getStr(processVariables,"finishTime"));
+                pendingTask.setFinishTime(finishTime);
+            }
+            return pendingTask;
+        }).collect(Collectors.toList());
+        return PageResponse.of(pendingTasksList,
+                //页码
+                pendingTasksDto.getPageNum(),
+                //每页大小
+                pendingTasksDto.getPageSize(),
+                //总页数
+                pages,
+                //总数据数
+                count
+        );
     }
+
 
     @Override
     public void completeProcess(String title, String taskId, String userId, Integer code, Integer status) {
@@ -127,7 +217,6 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
         String processInstanceId = task.getProcessInstanceId();
         //防止activiti报权限错误
         Authentication.setAuthenticatedUserId(userId);
-
         //在驳回场景下，养老顾问和护理主管执行过的历史记录没有必要在存储，否则会在页面中出现重复数据，影响用户体验
         HistoricTaskInstanceQuery historicTaskInstanceQuery = historyService.createHistoricTaskInstanceQuery().processInstanceId(processInstanceId);
         List<HistoricTaskInstance> list = historicTaskInstanceQuery.list();
@@ -145,11 +234,18 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
         Map<String, Object> variables = new HashMap<>();
         if (ObjectUtil.isNotEmpty(status)) {
             variables.put("processStatus", status);
+            //如果任务已经不在申请状态就记录结束时间
+            if (ObjectUtil.notEqual(status, PendingTasksConstant.TASK_STATUS_APPLICATION)) {
+                //记录完成时间
+                variables.put("finishTime", LocalDateTime.now());
+            }
         }
         if (ObjectUtil.isNotEmpty(title)) {
             variables.put("processTitle", title);
         }
         variables.put("ops", code);
+
+
         this.taskService.complete(taskId, variables);
     }
 
@@ -157,39 +253,39 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
     public void start(Long id, String processKey, User user, Map<String, Object> map, boolean autoFinished) {
         //以流程id:id的拼接格式作为businessKey
         String businessKey = StrUtil.format("{}:{}", processKey, id);
-        map.put("businessKey",businessKey);
+        map.put("businessKey", businessKey);
         //启动流程实例
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(processKey, businessKey, map);
         //判断是否自动完成
-        if(!autoFinished){
+        if (!autoFinished) {
             return;
-        }else{
+        } else {
             //自动完成流程的第一个任务
             String processInstanceId = processInstance.getProcessInstanceId();
             //获取任务列表
-            List<Map<String,Object>> tasklist = myTaskList(user.getId().toString());
-            Map<String,Object> taskMap = tasklist.stream()
+            List<Map<String, Object>> tasklist = myTaskList(user.getId().toString());
+            Map<String, Object> taskMap = tasklist.stream()
                     //找到任务列表中和本流程id一致的任务
-                    .filter(map1 -> MapUtil.getStr(map1,"processInstance") == processInstanceId)
+                    .filter(map1 -> MapUtil.getStr(map1, "processInstanceId").equals(processInstanceId))
                     //代理人保持一致
-                    .filter(map1 -> MapUtil.getStr(map1,"assignee") == user.getId().toString())
+                    .filter(map1 -> MapUtil.getStr(map1, "assignee").equals(user.getId().toString()))
                     //得到列表中的第一个
                     .findFirst()
                     .get();
-            String taskId = MapUtil.getStr(taskMap,"taskId");
+            String taskId = MapUtil.getStr(taskMap, "taskId");
 //            taskService.createTaskQuery()
 //                        .processInstanceId(processInstanceId)
 //                        .taskAssignee(user.getId().toString())
 //                        .singleResult();
             //完成任务
-            completeProcess(null, taskId, Convert.toStr(user.getId()),1, PendingTasksConstant.TASK_STATUS_APPLICATION);
+            completeProcess(null, taskId, Convert.toStr(user.getId()), 1, PendingTasksConstant.TASK_STATUS_APPLICATION);
         }
     }
 
     /**
      * 撤销思路
-     *  - 设置流程变量为已结束
-     *  - 删除流程实例
+     * - 设置流程变量为已结束
+     * - 删除流程实例
      *
      * @param taskId 任务id
      * @param status 状态 1申请中 2已完成 3已关闭
@@ -212,13 +308,26 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     @Override
     public Integer isCurrentUserAndStep(String taskId, Integer status, CheckIn checkIn) {
-        //TODO 待实现
+        if(ObjectUtil.equals(status,checkIn.getFlowStatus())){//判断状态是否相等
+            //通过获取formkey来判断任务是否是当前登录人的任务
+            //因为从我的代办和我的申请点入的任务必定为我的所属任务(在分页查询中以登录人的id作为申请人id和代理人id进行查询的结果)
+            HistoricTaskInstance instance = historyService.createHistoricTaskInstanceQuery()
+                    .taskId(taskId)
+                    .singleResult();
+            String formKey = instance.getFormKey();
+            if(ObjectUtil.equals(formKey,checkIn.getFlowStatus().toString())){
+                return 1;
+            }else{
+                return 0;
+            }
+        }
         return 1;
     }
 
 
     /**
      * 是否查看当前审核用户的任务
+     *
      * @param taskId
      * @param status
      * @param retreat
@@ -242,6 +351,7 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     /**
      * 驳回任务
+     *
      * @param taskId
      * @param first  是否默认退回流程第一个节点，true 是,false默认是上一个节点
      */
@@ -344,11 +454,12 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     /**
      * 把一个任务动态转向目标节点
-     * @param process   目标节点
-     * @param task  当前任务
+     *
+     * @param process            目标节点
+     * @param task               当前任务
      * @param taskId             当前任务id
-     * @param targetSequenceFlow  目标节点所有连线
-     * @param first  默认flase，找上一个节点
+     * @param targetSequenceFlow 目标节点所有连线
+     * @param first              默认flase，找上一个节点
      */
     private void trunToTarget(Process process, TaskInfo task, String
             taskId, List<SequenceFlow> targetSequenceFlow, boolean first) {

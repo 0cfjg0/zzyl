@@ -101,7 +101,7 @@
     </select>
     <select id="findUserVoListByDeptNo" parameterType="java.lang.String" resultMap="BaseResultVoMap">
         SELECT u.id,
-               u.user_name,
+               u.username,
                u.open_id,
                u.password,
                u.user_type,
@@ -119,7 +119,7 @@
                u.remark,
                u.dept_no
         FROM sys_user u
-        WHERE u.post_no = #{deptNo}
+        WHERE u.dept_no = #{deptNo}
           AND u.data_state = '0'
     </select>
     <select id="findUserVoListByPostNo" parameterType="java.lang.String" resultMap="BaseResultVoMap">

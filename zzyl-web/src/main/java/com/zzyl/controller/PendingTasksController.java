@@ -32,8 +32,10 @@ public class PendingTasksController extends BaseController {
         //只查询有当前登录人的任务
         Long userId = UserThreadLocal.getMgtUserId();
         if(pendingTasksDto.getReqType() == 0){
+            //如果查待办,查代理人id
             pendingTasksDto.setAssigneeId(userId);
         }else {
+            //如果查申请,查申请人id
             pendingTasksDto.setApplicatId(userId);
         }
 

@@ -35,9 +35,10 @@ public class CheckInController {
         return checkInService.createCheckIn(checkInDto);
     }
 
+    //评估
     @PostMapping("/review")
     @ApiOperation(value = "评估", notes = "传入入住对象")
-    public ResponseResult<Void> review(
+    public ResponseResult<CheckInVo> review(
             @RequestBody @ApiParam(value = "入住对象", required = true) CheckInDto checkInDto) {
         return checkInService.review(checkInDto);
     }
@@ -52,9 +53,10 @@ public class CheckInController {
         return checkInService.getCheckIn(code, assigneeId, flowStatus, taskId);
     }
 
+    //副院长同意
     @PutMapping("/submit")
     @ApiOperation(value = "同意")
-    public ResponseResult<Void> submitCheckIn(
+    public ResponseResult<CheckInVo> submitCheckIn(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "审批意见") String message,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
@@ -70,9 +72,10 @@ public class CheckInController {
         return checkInService.disapprove(id, message, taskId);
     }
 
+    //副院长拒绝
     @PutMapping("/reject")
     @ApiOperation(value = "审核拒绝")
-    public ResponseResult<Void> auditReject(
+    public ResponseResult<CheckInVo> auditReject(
             @RequestParam @ApiParam(value = "入住Id") Long id,
             @RequestParam @ApiParam(value = "拒绝原因") String message,
             @RequestParam @ApiParam(value = "任务Id") String taskId) {
