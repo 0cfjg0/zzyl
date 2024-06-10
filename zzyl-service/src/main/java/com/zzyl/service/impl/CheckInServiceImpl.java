@@ -2,6 +2,7 @@ package com.zzyl.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -21,19 +22,15 @@ import com.zzyl.dto.CheckInDto;
 import com.zzyl.dto.ContractDto;
 import com.zzyl.dto.ElderDto;
 import com.zzyl.entity.*;
+import com.zzyl.exception.BaseException;
 import com.zzyl.mapper.AccraditationRecordMapper;
 import com.zzyl.mapper.CheckInMapper;
 import com.zzyl.mapper.DeptMapper;
 import com.zzyl.mapper.UserMapper;
-import com.zzyl.service.AccraditationRecordService;
-import com.zzyl.service.ActFlowCommService;
-import com.zzyl.service.CheckInService;
-import com.zzyl.service.ElderService;
+import com.zzyl.service.*;
 import com.zzyl.utils.CodeUtil;
 import com.zzyl.utils.UserThreadLocal;
-import com.zzyl.vo.CheckInVo;
-import com.zzyl.vo.RecoreVo;
-import com.zzyl.vo.UserVo;
+import com.zzyl.vo.*;
 import com.zzyl.vo.retreat.ElderVo;
 import com.zzyl.vo.retreat.TasVo;
 import org.apache.commons.lang3.ObjectUtils;
@@ -79,7 +76,9 @@ public class CheckInServiceImpl implements CheckInService {
 
     private static final Integer OPT_APPROVE = 1;
 
-    private static final Integer OPT_REJECT = 1;
+    private static final Integer OPT_REJECT = 2;
+
+    private static final Integer OPT_DISAPPROVE = 3;
 
     @Resource
     private AccraditationRecordService accraditationRecordService;
@@ -87,6 +86,14 @@ public class CheckInServiceImpl implements CheckInService {
     @Resource
     private AccraditationRecordMapper accraditationRecordMapper;
 
+    @Resource
+    private CheckInConfigService checkInConfigService;
+
+    @Resource
+    NursingLevelService nursingLevelService;
+
+    @Resource
+    ContractService contractService;
 
     @Override
     @Transactional
@@ -94,7 +101,7 @@ public class CheckInServiceImpl implements CheckInService {
         //checkInDto:前端提交表单后返回的入住信息
         ElderDto elderDto = checkInDto.getElderDto();
         //查询老人信息
-        ElderVo elderVo = elderService.selectByIdCardAndName(elderDto.getIdCardNo(),elderDto.getName());
+        ElderVo elderVo = elderService.selectByIdCardAndName(elderDto.getIdCardNo(), elderDto.getName());
         //验证老人的状态
         //如果已经存在入住记录而且没有退住
         if (ObjectUtil.isNotEmpty(elderVo) && ObjectUtil.notEqual(elderVo.getStatus(), 5)) {
@@ -114,21 +121,21 @@ public class CheckInServiceImpl implements CheckInService {
         //保存入住信息
         //新增和更新(驳回时更新)
         CheckIn checkIn = null;
-        if(ObjectUtils.isNotEmpty(checkInDto.getId())){
+        if (ObjectUtils.isNotEmpty(checkInDto.getId())) {
             //todo 更新
-        }else{
+        } else {
             //checkin:入住申请实体类
-            checkIn = BeanUtil.toBean(checkInDto,CheckIn.class);
+            checkIn = BeanUtil.toBean(checkInDto, CheckIn.class);
             //将整个checkInDto作为Json字符串存储到入住申请的otherApplyInfo中
             checkIn.setOtherApplyInfo(JSONUtil.toJsonStr(checkInDto));
             //设置入住标题
-            checkIn.setTitle(StrUtil.format("{}的入住申请",elder.getName()));
+            checkIn.setTitle(StrUtil.format("{}的入住申请", elder.getName()));
             checkIn.setElderId(elder.getId());
             //申请单编号
             //前缀,redis缓存防止重复,失效时间
             String checkInCode = CodeUtil.generateCode(CHECK_IN_CODE_PREFIX, stringRedisTemplate, 5);
             checkIn.setCheckInCode(checkInCode);
-            User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+            User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
             checkIn.setCounselor(user.getRealName()); //养老顾问姓名
             checkIn.setApplicat(user.getRealName()); //养老顾问姓名
             checkIn.setApplicatId(user.getId()); //申请人id
@@ -140,12 +147,12 @@ public class CheckInServiceImpl implements CheckInService {
 
             //工作流
             //提交(第一个流程节点自动通过)
-            if(ObjectUtils.isEmpty(checkInDto.getTaskId())){
+            if (ObjectUtils.isEmpty(checkInDto.getTaskId())) {
                 //新增场景
                 //开启流程(申请id,bpmn中定义的id,当前用户对象,流程参数,是否自动完成)
-                Map<String,Object> map = setVariables(checkIn);
-                actFlowCommService.start(checkIn.getId(),PROCESS_DEFINITION_KEY,user,map,true);
-            }else{
+                Map<String, Object> map = setVariables(checkIn);
+                actFlowCommService.start(checkIn.getId(), PROCESS_DEFINITION_KEY, user, map, true);
+            } else {
                 //更新场景
 
             }
@@ -156,7 +163,7 @@ public class CheckInServiceImpl implements CheckInService {
         //拿到下一个代理人,即当前流程的代理人(上一个人任务已完结)
         Long nextAssignee = actFlowCommService.getNextAssignee(PROCESS_DEFINITION_KEY, businessKey);
         //user
-        User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
         //记录实体类
         RecoreVo recoreVo = new RecoreVo();
         recoreVo.setId(checkIn.getId()); //将入住信息id作为业务id
@@ -178,33 +185,33 @@ public class CheckInServiceImpl implements CheckInService {
     //封装流程参数到map集合中
     //流程参数
     @Transactional
-    public Map<String,Object> setVariables(CheckIn checkIn){
-        Map<String,Object> map = new HashMap<>();
-        map.put("agent0",checkIn.getApplicatId());//养老顾问
+    public Map<String, Object> setVariables(CheckIn checkIn) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("agent0", checkIn.getApplicatId());//养老顾问
         //入住单的其他信息
         map.put("agent0_name", checkIn.getApplicat());//名字
         map.put("processTitle", checkIn.getTitle());//标题
         map.put("applicationTime", checkIn.getCreateTime()); //申请时间
         //获取护理主管id
         Long nursingId = deptMapper.selectByDeptNo(RetreatConstant.NURSING_DEPT_CODE).getLeaderId();
-        map.put("agent1",nursingId);//护理主管
+        map.put("agent1", nursingId);//护理主管
         //根据职位编号获取副院长id
         List<UserVo> deanlist = userMapper.findUserVoListByPostNo(RetreatConstant.VICE_PRESIDENT_POST_NO);
         Long deanId = CollUtil.getFirst(deanlist).getId();
-        map.put("agent2",deanId);//副院长
-        map.put("agent3",nursingId);//养老顾问
+        map.put("agent2", deanId);//副院长
+        map.put("agent3", checkIn.getApplicatId());//养老顾问
         //获取随机法务部门人员
         List<UserVo> legalDept = userMapper.findUserVoListByDeptNo(RetreatConstant.LEGAL_DEPT_CODE);
         UserVo leaglAgent = RandomUtil.randomEle(legalDept);
 //        UserVo leaglAgent = RandomUtil.randomEle(legalDept,1);
-        map.put("agent4",leaglAgent.getId());//
+        map.put("agent4", leaglAgent.getId());//
 
         //设置流程类型
         map.put("processType", PendingTasksConstant.TASK_TYPE_CHECK_IN);
         //设置入住流程单号
-        map.put("processCode",checkIn.getCheckInCode());
+        map.put("processCode", checkIn.getCheckInCode());
         //设置流程状态
-        map.put("processStatus",PendingTasksConstant.TASK_STATUS_APPLICATION);
+        map.put("processStatus", PendingTasksConstant.TASK_STATUS_APPLICATION);
         return map;
     }
 
@@ -218,15 +225,30 @@ public class CheckInServiceImpl implements CheckInService {
         //查询申请单
         CheckIn checkIn = checkInMapper.selectByCheckInCode(code);
         //tasVo中需要传入checkInVo类型的数据
-        CheckInVo checkInVo = BeanUtil.toBean(checkIn,CheckInVo.class);
+        CheckInVo checkInVo = BeanUtil.toBean(checkIn, CheckInVo.class);
 
         //判断isShow(1可以查看 0无法查看)只有代理人才能查看审批中的流程
         //传入状态和数据库中的流程状态是否相等,不相等isShow设为1,可以查看(因为只有数据库中的流程状态才是对应审批中的流程状态)
         //相等的情况下再判断任务的代理人是否等于登录人
-
-        //判断是否是目前任务
-        //参数:taskId,前端传入的点击的流程状态,checkIn
-        Integer isshow = actFlowCommService.isCurrentUserAndStep(taskId,flowStatus,checkIn);
+        Integer isshow = 1;
+        //是否显示撤回按钮
+        Boolean isRevocation = false;
+        //入住完成后所有人都能查看入住信息
+        if (ObjectUtil.equals(checkIn.getStatus(),CheckIn.Status.APPLICATION.getCode())) {
+            if (flowStatus < 0) {
+                isshow = 0;
+            } else {
+                //判断是否是目前任务
+                //参数:taskId,前端传入的点击的流程状态,checkIn
+                isshow = actFlowCommService.isCurrentUserAndStep(taskId, flowStatus, checkIn);
+            }
+        }
+        //显示撤回按钮
+        if(isshow == 2){
+            isshow = 1;
+            isRevocation = true;
+            tasVo.setIsRevocation(isRevocation);
+        }
         tasVo.setIsShow(isshow);
 
         //查询审批记录
@@ -234,17 +256,17 @@ public class CheckInServiceImpl implements CheckInService {
         tasVo.setAccraditationRecords(record);
 
         //封装tasVo中的checkIn属性
-        if(StrUtil.isNotEmpty(checkIn.getOtherApplyInfo())){
+        if (StrUtil.isNotEmpty(checkIn.getOtherApplyInfo())) {
             //checkIn的OtherApplyInfo属性中封装了checkDto的json字符串
             //通过JSONUtil.parseObj方法会将json解析成一个map集合
             JSONObject jsonObject = JSONUtil.parseObj(checkIn.getOtherApplyInfo());
             //将map集合(checkInDto)中的属性复制到checkInVo中
-            BeanUtil.copyProperties(jsonObject,checkInVo);
+            BeanUtil.copyProperties(jsonObject, checkInVo);
         }
         tasVo.setCheckIn(checkInVo);
 
         //如果前端的flowStatus传入-1,将其设置为数据库中存储的流程状态,即当前的流程状态
-        if(flowStatus == -1){
+        if (flowStatus == -1) {
             flowStatus = checkIn.getFlowStatus();
         }
 
@@ -255,10 +277,41 @@ public class CheckInServiceImpl implements CheckInService {
             BeanUtil.copyProperties(reviewInfo, checkInVo);
         }
 
+        //设置入住配置数据
+        //根据老人的id查到checkIn配置
+        CheckInConfig checkInConfig = checkInConfigService.findCurrentConfigByElderId(checkIn.getElderId());
+        if (ObjectUtil.isNotEmpty(checkInConfig)) {
+            //获取护理等级数据
+            NursingLevelVo nursingLevelVo = nursingLevelService.getById(checkInConfig.getNursingLevelId());
+            checkInVo.setNursingLevelVo(nursingLevelVo);
+
+            //获取楼层,房间和床位数据
+            //组装床位信息，方便前端展示和回显 拼接规则： 楼层id:房间id:床位id:楼层名称:入住编码
+            List<String> list = StrUtil.split(checkInConfig.getRemark(), ":");
+
+            //list:{floorid,roomid,bedid,floorname,code}
+            if (CollUtil.size(list) == 5) {
+                CheckInConfigVo checkInConfigVo = BeanUtil.toBean(checkInConfig, CheckInConfigVo.class);
+                checkInConfigVo.setFloorId(Convert.toLong(list.get(0)));
+                checkInConfigVo.setRoomId(Convert.toLong(list.get(1)));
+                checkInConfigVo.setBedId(Convert.toLong(list.get(2)));
+                checkInConfigVo.setFloorName(list.get(3));
+                checkInConfigVo.setCode(list.get(4));
+                //保存配置
+                checkInVo.setCheckInConfigVo(checkInConfigVo);
+            }
+
+
+        }
+        //设置合同信息
+        ContractVo contractVo = this.contractService.selectByElderId(checkIn.getElderId());
+        checkInVo.setContractVo(contractVo);
+
         return ResponseResult.success(tasVo);
     }
 
     //下面两个方法用来封装record记录
+
     /**
      * 保存操作记录（同意操作）
      *
@@ -321,13 +374,13 @@ public class CheckInServiceImpl implements CheckInService {
 
         //完成流程
         //获取当前user对象
-        User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
         //完成 参数中code为opt值 status为流程状态
-        actFlowCommService.completeProcess(checkIn.getTitle(),taskId,user.getId().toString(),OPT_APPROVE,checkIn.getStatus());
+        actFlowCommService.completeProcess(checkIn.getTitle(), taskId, user.getId().toString(), OPT_APPROVE, checkIn.getStatus());
 
         //保存记录
         this.saveRecord(checkIn, "院长处理-入住审批", "养老顾问处理-入住配置");
-        CheckInVo checkInVo = BeanUtil.toBean(checkIn,CheckInVo.class);
+        CheckInVo checkInVo = BeanUtil.toBean(checkIn, CheckInVo.class);
 
         return ResponseResult.success(checkInVo);
     }
@@ -346,33 +399,129 @@ public class CheckInServiceImpl implements CheckInService {
 
         //完成流程
         //获取当前user对象
-        User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
         //完成 参数中code为opt值 status为流程状态
-        actFlowCommService.completeProcess(checkIn.getTitle(),taskId,user.getId().toString(),OPT_REJECT,checkIn.getStatus());
+        actFlowCommService.completeProcess(checkIn.getTitle(), taskId, user.getId().toString(), OPT_REJECT, checkIn.getStatus());
 
         //保存记录
         saveRecord(checkIn,
-                //拒绝状态常量
+                /**
+                 * 审核状态
+                 * 1:通过
+                 * 2:拒绝
+                 * 3:驳回
+                 * 4:撤回
+                 * 5:撤销
+                 */
                 AccraditationRecordConstant.AUDIT_STATUS_REJECT,
                 reject,
                 "院长处理-入住审批",
                 "",
-                //设置记录已处理
+                /**
+                 * 处理类型（0:已审批，1：已处理）
+                 */
                 AccraditationRecordConstant.RECORD_HANDLE_TYPE_PROCESSED);
-        CheckInVo checkInVo = BeanUtil.toBean(checkIn,CheckInVo.class);
+        CheckInVo checkInVo = BeanUtil.toBean(checkIn, CheckInVo.class);
 
         return ResponseResult.success(checkInVo);
     }
 
+
+    //养老配置
+    @Override
+    @Transactional
+    public ResponseResult<Void> checkIn(CheckInConfigDto checkInConfigDto) {
+        //保存入住配置
+        this.checkInConfigService.checkIn(checkInConfigDto);
+
+        //更新入住信息
+        CheckIn checkIn = this.checkInMapper.selectByPrimaryKey(checkInConfigDto.getCheckInId());
+        //设置流程状态
+        checkIn.setFlowStatus(CheckIn.FlowStatus.SIGN.getCode());
+        //生成合同编号
+        String ht = CodeUtil.generateCode("HT", stringRedisTemplate, 5);
+        checkIn.setRemark(ht);
+        //更新入住时间
+        checkIn.setCheckInTime(checkInConfigDto.getCheckInStartTime());
+        this.checkInMapper.updateByPrimaryKeySelective(checkIn);
+
+        //完成流程
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
+        this.actFlowCommService.completeProcess(checkIn.getTitle(), checkInConfigDto.getTaskId(), Convert.toStr(user.getId()), OPT_APPROVE, checkIn.getStatus());
+
+        //保存操作记录
+        this.saveRecord(checkIn, "养老顾问处理-入住配置", "法务处理-签约办理");
+        return ResponseResult.success();
+    }
+
     @Override
     public ResponseResult<Void> revocation(Long id, Integer flowStatus, String taskId) {
-        //TODO 待实现
+        //更新数据
+        CheckIn checkIn = this.checkInMapper.selectByPrimaryKey(id);
+        //退回上一步的流程
+        checkIn.setFlowStatus(checkIn.getFlowStatus() - 1);
+        checkInMapper.updateByPrimaryKeySelective(checkIn);
+
+        //完成流程
+        //@param taskId
+        //@param first是否默认退回流程第一个节点，true 是,false默认是上一个节点
+        actFlowCommService.withdrawTask(taskId,false);
+
+        //保存数据
+        saveRecord(checkIn,
+                /**
+                 * 审核状态
+                 * 1:通过
+                 * 2:拒绝
+                 * 3:驳回
+                 * 4:撤回
+                 * 5:撤销
+                 */
+                AccraditationRecordConstant.AUDIT_STATUS_WITHDRAWS,
+                "撤回",
+                "驳回申请-入住审批",
+                "",
+                /**
+                 * 处理类型（0:已审批，1：已处理）
+                 */
+                AccraditationRecordConstant.RECORD_HANDLE_TYPE_PROCESSED);
+
         return ResponseResult.success();
     }
 
     @Override
     public ResponseResult<Void> disapprove(Long id, String message, String taskId) {
-        //TODO 待实现
+        //更新数据
+        CheckIn checkIn = checkInMapper.selectByPrimaryKey(id);
+        //退回申请状态
+        checkIn.setFlowStatus(CheckIn.FlowStatus.APPLY.getCode());
+        //清除健康评估数据
+        checkIn.setReviewInfo(null);
+        checkInMapper.updateByPrimaryKeySelective(checkIn);
+
+        //完成流程
+        //获取当前user对象
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+        actFlowCommService.completeProcess(checkIn.getTitle(),taskId,user.getId().toString(),OPT_DISAPPROVE,checkIn.getStatus());
+
+        //保存记录
+        saveRecord(checkIn,
+                /**
+                 * 审核状态
+                 * 1:通过
+                 * 2:拒绝
+                 * 3:驳回
+                 * 4:撤回
+                 * 5:撤销
+                 */
+                AccraditationRecordConstant.AUDIT_STATUS_DISAPPROVE,
+                message,
+                "驳回申请-入住审批",
+                "养老顾问处理-入住申请",
+                /**
+                 * 处理类型（0:已审批，1：已处理）
+                 */
+                AccraditationRecordConstant.RECORD_HANDLE_TYPE_PROCESSED);
         return ResponseResult.success();
     }
 
@@ -386,7 +535,34 @@ public class CheckInServiceImpl implements CheckInService {
     @Override
     @Transactional
     public ResponseResult<Void> cancel(Long id, String taskId) {
-        //TODO 待实现
+        //更新数据
+        CheckIn checkIn = checkInMapper.selectByPrimaryKey(id);
+        checkIn.setStatus(CheckIn.Status.CLOSED.getCode());
+        checkInMapper.updateByPrimaryKeySelective(checkIn);
+
+        //完成流程
+        // * @param taskId 任务id
+        // * @param status 状态 1申请中 2已完成 3已关闭
+        actFlowCommService.closeProcess(taskId,CheckIn.Status.CLOSED.getCode());
+
+        //保存记录
+        saveRecord(checkIn,
+                /**
+                 * 审核状态
+                 * 1:通过
+                 * 2:拒绝
+                 * 3:驳回
+                 * 4:撤回
+                 * 5:撤销
+                 */
+                AccraditationRecordConstant.AUDIT_STATUS_CANCEL,
+                "撤销",
+                "撤销申请-入住申请",
+                "",
+                /**
+                 * 处理类型（0:已审批，1：已处理）
+                 */
+                AccraditationRecordConstant.RECORD_HANDLE_TYPE_PROCESSED);
         return ResponseResult.success();
     }
 
@@ -404,15 +580,15 @@ public class CheckInServiceImpl implements CheckInService {
 
         //完成流程
         //获取当前user对象
-        User user = JSONUtil.toBean(UserThreadLocal.getSubject(),User.class);
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
         //完成 参数中code为opt值 status为流程状态
         //todo null?
-        actFlowCommService.completeProcess(checkIn.getTitle(),checkInDto.getTaskId(),user.getId().toString(),OPT_APPROVE,checkIn.getStatus());
+        actFlowCommService.completeProcess(checkIn.getTitle(), checkInDto.getTaskId(), user.getId().toString(), OPT_APPROVE, checkIn.getStatus());
 
         //保存记录
         saveRecord(checkIn, "护理部组长处理-入住评估", "院长处理-入住审批");
 
-        CheckInVo checkInVo = BeanUtil.toBean(checkIn,CheckInVo.class);
+        CheckInVo checkInVo = BeanUtil.toBean(checkIn, CheckInVo.class);
         return ResponseResult.success(checkInVo);
     }
 
@@ -422,17 +598,37 @@ public class CheckInServiceImpl implements CheckInService {
         return null;
     }
 
-    @Override
-    @Transactional
-    public ResponseResult<Void> checkIn(CheckInConfigDto checkInConfigDto) {
-        //TODO 待实现
-        return ResponseResult.success();
-    }
 
     @Override
     @Transactional
     public ResponseResult<Void> sign(ContractDto contractDto) {
-        //TODO 待实现
+        //更新状态
+        CheckIn checkIn = checkInMapper.selectByPrimaryKey(contractDto.getCheckInId());
+        //如果申请状态已经是结束状态
+        if (checkIn.getStatus().equals(CheckIn.Status.FINISHED.getCode())) {
+            throw new BaseException("该老人已经完成了入住办理");
+        }
+        //设置状态为已完成
+        checkIn.setStatus(CheckIn.Status.FINISHED.getCode());
+        //设置流程状态为签约
+        checkIn.setFlowStatus(CheckIn.FlowStatus.SIGN.getCode());
+        checkInMapper.updateByPrimaryKeySelective(checkIn);
+
+        //更新老人和床位状态
+        contractDto.setElderId(checkIn.getElderId());
+        //合同设置入住单号
+        contractDto.setCheckInNo(checkIn.getCheckInCode());
+        //签约
+        contractService.sign(contractDto);
+
+        //完成工作流程
+        User user = JSONUtil.toBean(UserThreadLocal.getSubject(), User.class);
+        actFlowCommService.completeProcess(checkIn.getTitle(), contractDto.getTaskId(), user.getId().toString(), OPT_APPROVE, CheckIn.Status.FINISHED.getCode());
+
+        //保存操作记录
+        saveRecord(checkIn, "法务处理-签约办理", "");
+
+        //保存操作记录
         return ResponseResult.success();
     }
 }

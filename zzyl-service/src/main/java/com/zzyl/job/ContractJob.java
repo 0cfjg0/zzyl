@@ -29,25 +29,32 @@ public class ContractJob {
     /**
      * 合同状态更新
      */
-    @Scheduled(cron = "0 0 * * * *")
+    //
+    @Scheduled(cron = "0 0 1 * * *")
     public void contractJob() {
 
+        //查询所有合同
         List<Contract> contractList = contractService.listAllContracts();
+        //如果存在合同
         if (CollUtil.isNotEmpty(contractList)) {
             List<Contract> updateList = new ArrayList<>();
             List<Contract> effUpdateList = new ArrayList<>();
             for (Contract contract : contractList) {
+                //跳过失效合同
                 if (contract.getStatus().equals(ContractStatusEnum.UN_EFFECTIVE.getOrdinal())) {
                     continue;
                 }
+                //如果合同超过结束时间就设置为过期
                 if (contract.getEndTime().isBefore(LocalDateTime.now())) {
                     contract.setStatus(ContractStatusEnum.EXPIRED.getOrdinal());
                     updateList.add(contract);
+                //如果合同到了入住时间且没有过期就设置为生效
                 } else if (contract.getStartTime().isBefore(LocalDateTime.now())  && contract.getEndTime().isAfter(LocalDateTime.now())) {
                     contract.setStatus(ContractStatusEnum.EFFECTIVE.getOrdinal());
                     effUpdateList.add(contract);
                 }
             }
+            //批量修改合同
             if (CollUtil.isNotEmpty(updateList)) {
                 contractService.updateBatchById(updateList);
             }

@@ -308,18 +308,21 @@ public class ActFlowCommServiceImpl implements ActFlowCommService {
 
     @Override
     public Integer isCurrentUserAndStep(String taskId, Integer status, CheckIn checkIn) {
+        HistoricTaskInstance instance = historyService.createHistoricTaskInstanceQuery()
+                .taskId(taskId)
+                .singleResult();
+        String formKey = instance.getFormKey();
         if(ObjectUtil.equals(status,checkIn.getFlowStatus())){//判断状态是否相等
             //通过获取formkey来判断任务是否是当前登录人的任务
             //因为从我的代办和我的申请点入的任务必定为我的所属任务(在分页查询中以登录人的id作为申请人id和代理人id进行查询的结果)
-            HistoricTaskInstance instance = historyService.createHistoricTaskInstanceQuery()
-                    .taskId(taskId)
-                    .singleResult();
-            String formKey = instance.getFormKey();
             if(ObjectUtil.equals(formKey,checkIn.getFlowStatus().toString())){
                 return 1;
             }else{
                 return 0;
             }
+        //如果流程状态是当前任务人的任务的下一步
+        }else if(ObjectUtil.equals(Convert.toStr(checkIn.getFlowStatus()-1),formKey)){
+            return 2;
         }
         return 1;
     }

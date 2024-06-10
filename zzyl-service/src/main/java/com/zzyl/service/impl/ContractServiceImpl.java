@@ -90,90 +90,69 @@ public class ContractServiceImpl implements ContractService {
 
     /**
      * 添加合同
+     *
      * @param contractDto 合同dto
-     * @return 添加结果
      */
-    @Transactional
     @Override
+    @Transactional
     public int sign(ContractDto contractDto) {
-        Contract contract = new Contract();
-        BeanUtils.copyProperties(contractDto, contract);
+        //获取老人id
+        Long elderId = contractDto.getElderId();
 
-        // 流程状态 操作记录
-        CheckIn checkIn = checkInMapper.selectByPrimaryKey(contractDto.getCheckInId());
-        if (CheckIn.Status.FINISHED.getCode().equals(checkIn.getStatus())) {
-            throw new BaseException("该老人已经完成入住办理");
-        }
-        //设置流程状态
-        checkIn.setStatus(CheckIn.Status.FINISHED.getCode());
-        checkInMapper.updateByPrimaryKeySelective(checkIn);
+        //获取入住配置数据
+        CheckInConfig checkInConfig = checkInConfigService.findCurrentConfigByElderId(elderId);
 
-        //  操作记录
-        //从当前线程中获取用户数据
-        String subject = UserThreadLocal.getSubject();
-        User user = JSONUtil.toBean(subject, User.class);
-
-
-        CheckInConfig checkInConfig = checkInConfigService.findCurrentConfigByElderId(checkIn.getElderId());
-        // 老人
+        //更新老人状态
         ElderDto elderDto = new ElderDto();
-        elderDto.setId(checkInConfig.getElderId());
+        elderDto.setId(elderId);
+        //设置状态为启用
         elderDto.setStatus(1);
         elderService.updateByPrimaryKeySelective(elderDto, false);
 
-        // 余额
+        //初始化老人的余额
         Balance balance = new Balance();
         balance.setElderId(elderDto.getId());
+        //初始化预付款余额
         balance.setPrepaidBalance(new BigDecimal(0));
+        //初始化欠费金额
         balance.setArrearsAmount(new BigDecimal(0));
+        //余额状态状态（0：正常，1：退住）
         balance.setStatus(0);
+        //初始化押金金额
         balance.setDepositAmount(checkInConfig.getDepositAmount());
-        Balance balance1 = balanceMapper.selectByElderId(elderDto.getId());
-        if (ObjectUtil.isNotEmpty(balance1)) {
-            balanceMapper.deleteByPrimaryKey(balance1.getId());
+        //尝试查询老人以前的余额数据
+        Balance oldBalance = balanceMapper.selectByElderId(elderDto.getId());
+        if (ObjectUtil.isNotEmpty(oldBalance)) {
+            //如果已经存在老人对应的余额数据，就将其删除掉
+            balanceMapper.deleteByPrimaryKey(oldBalance.getId());
         }
-        balanceMapper.insert(balance);
-
-
+        balanceMapper.insert(balance); //插入新的数据
 
         // 床位状态
         Bed bedByNum = bedMapper.getBedByNum(checkInConfig.getBedNo());
         BedDto bedDto = BeanUtil.toBean(bedByNum, BedDto.class);
-        bedDto.setBedStatus(1);
+        bedDto.setBedStatus(1); //标记为已入住
         bedService.updateBed(bedDto);
 
-
-        ElderVo elderVo = elderService.selectByPrimaryKey(checkIn.getElderId());
-
-        contract.setElderName(elderVo.getName());
-        contract.setElderId(checkIn.getElderId());
-        contract.setCheckInNo(checkIn.getCheckInCode());
-        contract.setStatus(ContractStatusEnum.PENDING_EFFECTIVE.getOrdinal());
+        //DTO转实体
+        Contract contract = BeanUtil.toBean(contractDto, Contract.class);
+        ElderVo elderVo = elderService.selectByPrimaryKey(contract.getElderId());
+        contract.setElderName(elderVo.getName()); //老人姓名
+        contract.setStatus(ContractStatusEnum.PENDING_EFFECTIVE.getOrdinal()); //状态未生效
+        int count = contractMapper.insert(contract);//保存合同数据
 
         // 生成首月账单
         BillDto billDto = new BillDto();
-        billDto.setElderId(elderVo.getId());
-        String format = LocalDateTimeUtil.format(checkInConfig.getCostStartTime(), "yyyy-MM");
-        billDto.setBillMonth(format);
-        billService.createMonthBill(billDto);
+        billDto.setElderId(elderVo.getId()); //老人id
+        //设置账单月份
+        String billMonth = LocalDateTimeUtil.format(checkInConfig.getCostStartTime(), "yyyy-MM");
+        billDto.setBillMonth(billMonth);
+        billService.createMonthBill(billDto); //保存账单数据
+
         // 生成护理任务 创建时间是签约时间
         nursingTaskService.createMonthTask(elderVo, contract.getSignDate(), null);
-        actFlowCommService.completeProcess("", contractDto.getTaskId(), user.getId().toString(), 1, CheckIn.Status.FINISHED.getCode());
 
-
-        RecoreVo recoreVo = getRecoreVo(
-                checkIn,
-                user,
-                AccraditationRecordConstant.AUDIT_STATUS_PASS,
-                "同意",
-                "法务处理-签约办理",
-                "",
-                null,
-                AccraditationRecordConstant.RECORD_HANDLE_TYPE_PROCESSED);
-        accraditationRecordService.insert(recoreVo);
-
-
-        return contractMapper.insert(contract);
+        return count;
     }
 
     /**
@@ -273,6 +252,7 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public ContractVo selectByElderId(Long elderId) {
+        //根据老人id查询合同
         return BeanUtil.toBean(this.contractMapper.selectByElderId(elderId), ContractVo.class);
     }
 }
