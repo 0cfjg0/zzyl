@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -124,23 +125,23 @@ public class DeviceServiceImpl implements DeviceService {
 
         //转化为map
         //id对应deviceVo实体类
-        Map<String,DeviceVo> map = CollStreamUtil.toMap(deviceVosList, DeviceVo::getDeviceId, deviceVo -> deviceVo);
+        Map<String, DeviceVo> map = CollStreamUtil.toMap(deviceVosList, DeviceVo::getDeviceId, deviceVo -> deviceVo);
 
 
         //对list做转换
         List<DeviceVo> resList = deviceList
                 .stream()
                 .map(item ->
-                {
-                    DeviceVo deviceVo = BeanUtil.toBean(item, DeviceVo.class);
+                        {
+                            DeviceVo deviceVo = BeanUtil.toBean(item, DeviceVo.class);
 //                    根据id获取对应实体类
-                    DeviceVo vo = map.get(deviceVo.getIotId());
-                    if(ObjectUtil.isNotEmpty(vo)){
-                        //忽略空值复制值
-                        BeanUtil.copyProperties(vo,deviceVo, CopyOptions.create().ignoreNullValue());
-                    }
-                    return deviceVo;
-                }
+                            DeviceVo vo = map.get(deviceVo.getIotId());
+                            if (ObjectUtil.isNotEmpty(vo)) {
+                                //忽略空值复制值
+                                BeanUtil.copyProperties(vo, deviceVo, CopyOptions.create().ignoreNullValue());
+                            }
+                            return deviceVo;
+                        }
                 )
                 .collect(Collectors.toList());
 
@@ -170,7 +171,7 @@ public class DeviceServiceImpl implements DeviceService {
 
         //响应
         QueryDeviceInfoResponse queryDeviceInfoResponse = client.queryDeviceInfo(queryDeviceInfoRequest);
-        return BeanUtil.toBean(queryDeviceInfoResponse.getBody().getData(),DeviceVo.class);
+        return BeanUtil.toBean(queryDeviceInfoResponse.getBody().getData(), DeviceVo.class);
     }
 
     @Override
@@ -203,6 +204,93 @@ public class DeviceServiceImpl implements DeviceService {
         QueryThingModelPublishedResponse queryThingModelPublishedResponse = client.queryThingModelPublished(queryThingModelPublishedRequest);
         QueryThingModelPublishedResponseBody.QueryThingModelPublishedResponseBodyData data = queryThingModelPublishedResponse.getBody().getData();
         return data;
+    }
+
+    @Override
+    @Transactional
+    public void updateDevice(DeviceDto deviceDto) throws Exception {
+        String deviceName = deviceDto.getDeviceName();
+        String productKey = deviceDto.getProductKey();
+        String nickName = deviceDto.getNickname();
+        String IotId = deviceDto.getIotId();
+
+        //查询是否存在
+        QueryDeviceInfoRequest request = new QueryDeviceInfoRequest();
+        request.setIotInstanceId(aliIoTConfigProperties.getIotInstanceId());
+        request.setProductKey(productKey);
+        request.setDeviceName(deviceName);
+        request.setIotId(IotId);
+        QueryDeviceInfoResponse res = client.queryDeviceInfo(request);
+        if (ObjectUtil.isEmpty(res)) {
+            do {
+                System.out.println("未找到需要修改的设备,尝试新增中");
+            }
+            while (!this.registerDevice(deviceDto));
+            //新增数据库
+            Device device = BeanUtil.toBean(deviceDto, Device.class);
+            device.setDeviceId(deviceDto.getIotId());
+            int count = deviceMapper.insert(device);
+            if (count == 0) {
+                throw new BaseException("数据库更新失败");
+            }
+            return;
+        }
+
+        List<BatchUpdateDeviceNicknameRequest.BatchUpdateDeviceNicknameRequestDeviceNicknameInfo> list = new ArrayList<>();
+        BatchUpdateDeviceNicknameRequest.BatchUpdateDeviceNicknameRequestDeviceNicknameInfo info = new BatchUpdateDeviceNicknameRequest.BatchUpdateDeviceNicknameRequestDeviceNicknameInfo();
+        info.setDeviceName(deviceName);
+        info.setIotId(IotId);
+        info.setProductKey(productKey);
+        info.setNickname(nickName);
+        list.add(info);
+
+        //请求
+        BatchUpdateDeviceNicknameRequest updateRequest = new BatchUpdateDeviceNicknameRequest();
+        updateRequest.setIotInstanceId(aliIoTConfigProperties.getIotInstanceId());
+        updateRequest.setDeviceNicknameInfo(list);
+
+        //响应
+        BatchUpdateDeviceNicknameResponse updateResponse = client.batchUpdateDeviceNickname(updateRequest);
+        if (!updateResponse.getBody().getSuccess()) {
+            throw new BaseException(updateResponse.getBody().getErrorMessage());
+        }
+
+        //数据库更新
+        Device device = BeanUtil.toBean(deviceDto, Device.class);
+        device.setDeviceId(deviceDto.getIotId());
+        //todo 前端没传主键,改xml处理
+        int count = deviceMapper.updateByPrimaryKeySelective(device);
+        if (count == 0) {
+            throw new BaseException("数据库更新失败");
+        }
+
+        return;
+    }
+
+    @Override
+    @Transactional
+    public void deleteDevice(DeviceDto deviceDto) throws Exception {
+        String productKey = deviceDto.getProductKey();
+        String IotId = deviceDto.getIotId();
+
+        //请求
+        DeleteDeviceRequest deleteDeviceRequest = new DeleteDeviceRequest();
+        deleteDeviceRequest.setIotId(IotId);
+        deleteDeviceRequest.setProductKey(productKey);
+        deleteDeviceRequest.setIotInstanceId(aliIoTConfigProperties.getIotInstanceId());
+
+        //响应
+        DeleteDeviceResponse deleteDeviceResponse = client.deleteDevice(deleteDeviceRequest);
+        if (!deleteDeviceResponse.getBody().getSuccess()) {
+            throw new BaseException(deleteDeviceResponse.getBody().getErrorMessage());
+        }
+
+        //更新数据库
+        int count = deviceMapper.deleteByDeviceId(deviceDto.getIotId());
+        if (count == 0) {
+            throw new BaseException("数据库更新失败");
+        }
+        return;
     }
 
 

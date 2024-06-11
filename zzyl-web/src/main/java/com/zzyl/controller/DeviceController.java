@@ -11,10 +11,7 @@ import com.zzyl.vo.DeviceVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.core.parameters.P;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -78,11 +75,28 @@ public class DeviceController extends BaseController {
         return ResponseResult.success(res);
     }
 
-    @PostMapping("QueryThingModelPublished")
+    @PostMapping("/QueryThingModelPublished")
     @ApiOperation(value = "查看物模型功能列表", notes = "查看物模型功能列表")
     public ResponseResult<QueryThingModelPublishedResponseBody.QueryThingModelPublishedResponseBodyData> queryDeviceModel(@RequestBody DeviceDto deviceDto) throws Exception {
         QueryThingModelPublishedResponseBody.QueryThingModelPublishedResponseBodyData res = deviceService.queryDeviceModel(deviceDto);
         return ResponseResult.success(res);
     }
+
+    @PostMapping("/UpdateDevice")
+    @ApiOperation(value = "修改设备", notes = "修改设备")
+    public ResponseResult<Void> updateDevice(@RequestBody DeviceDto deviceDto) throws Exception {
+        deviceService.updateDevice(deviceDto);
+        return ResponseResult.success();
+    }
+
+    @DeleteMapping("/DeleteDevice")
+    @ApiOperation(value = "删除设备", notes = "删除设备")
+    public ResponseResult<Void> deleteDevice(@RequestBody DeviceDto deviceDto) throws Exception {
+        deviceService.deleteDevice(deviceDto);
+        return ResponseResult.success();
+    }
+
 }
+
+
 

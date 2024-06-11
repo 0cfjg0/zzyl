@@ -25,4 +25,8 @@ public interface DeviceService {
     QueryDevicePropertyStatusResponseBody.QueryDevicePropertyStatusResponseBodyData queryDeviceStatus(DeviceDto deviceDto) throws Exception;
 
     QueryThingModelPublishedResponseBody.QueryThingModelPublishedResponseBodyData queryDeviceModel(DeviceDto deviceDto) throws Exception;
+
+    void updateDevice(DeviceDto deviceDto) throws Exception;
+
+    void deleteDevice(DeviceDto deviceDto) throws Exception;
 }

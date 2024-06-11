@@ -81,9 +81,6 @@
     <update id="updateByPrimaryKeySelective" parameterType="com.zzyl.entity.Device">
         update device
         <set>
-            <if test="deviceId != null">
-                device_id = #{deviceId,jdbcType=VARCHAR},
-            </if>
             <if test="noteName != null">
                 note_name = #{noteName,jdbcType=VARCHAR},
             </if>
@@ -129,7 +126,7 @@
                 device_description = #{deviceDescription,jdbcType=VARCHAR}
             </if>
         </set>
-        where id = #{id,jdbcType=BIGINT}
+        where device_id = #{deviceId,jdbcType=VARCHAR}
     </update>
 
 </mapper>
