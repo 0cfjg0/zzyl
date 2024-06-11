@@ -110,8 +110,8 @@ zzyl:
     consumerGroupId: DEFAULT_GROUP
     #    consumerGroupId: 0CP9WrqP8Q1lLaWFjli9000100
     regionId: cn-shanghai
-    iotInstanceId: iot-06z00frq8umvkx2
-    host: iot-06z00frq8umvkx2.amqp.iothub.aliyuncs.com
+    iotInstanceId: iot-06z00a2f7y1p96k
+    host: iot-06z00a2f7y1p96k.amqp.iothub.aliyuncs.com
 
 management:
   health:
