@@ -21,4 +21,6 @@ public interface DeviceMapper {
     List<DeviceVo> selectByDeviceIds(List<String> list);
 
     List<DeviceVo> selectByLocation(List<String> ids, int type);
+
+    int updateByDeviceKey(Device record);
 }

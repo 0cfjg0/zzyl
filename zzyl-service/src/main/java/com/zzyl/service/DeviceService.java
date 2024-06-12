@@ -1,5 +1,6 @@
 package com.zzyl.service;
 
+import com.aliyun.iot20180120.models.QueryDeviceInfoResponseBody;
 import com.aliyun.iot20180120.models.QueryDevicePropertyStatusResponseBody;
 import com.aliyun.iot20180120.models.QueryDeviceRequest;
 import com.aliyun.iot20180120.models.QueryThingModelPublishedResponseBody;

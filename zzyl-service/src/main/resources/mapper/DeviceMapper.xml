@@ -81,6 +81,9 @@
     <update id="updateByPrimaryKeySelective" parameterType="com.zzyl.entity.Device">
         update device
         <set>
+            <if test="diviceId != null">
+                device_id = #{deviceId,jdbcType=VARCHAR},
+            </if>
             <if test="noteName != null">
                 note_name = #{noteName,jdbcType=VARCHAR},
             </if>
@@ -125,8 +128,61 @@
                 remark = #{remark,jdbcType=VARCHAR},
                 device_description = #{deviceDescription,jdbcType=VARCHAR}
             </if>
+                where id = #{Id,jdbcType=BIGINT}
         </set>
-        where device_id = #{deviceId,jdbcType=VARCHAR}
+
+    </update>
+
+    <update id="updateByDeviceKey" parameterType="com.zzyl.entity.Device">
+        update device
+        <set>
+            <if test="noteName != null">
+                note_name = #{noteName,jdbcType=VARCHAR},
+            </if>
+            <if test="productId != null">
+                product_id = #{productId,jdbcType=VARCHAR},
+            </if>
+            <if test="productName != null">
+                product_name = #{productName,jdbcType=VARCHAR},
+            </if>
+            <if test="bindingLocation != null">
+                binding_location = #{bindingLocation,jdbcType=VARCHAR},
+            </if>
+            <if test="locationType != null">
+                location_type = #{locationType,jdbcType=INTEGER},
+            </if>
+            <if test="physicalLocationType != null">
+                physical_location_Type = #{physicalLocationType,jdbcType=INTEGER},
+            </if>
+            <if test="deviceName != null">
+                device_name = #{deviceName,jdbcType=VARCHAR},
+            </if>
+            <if test="deviceDescription != null">
+                device_description = #{deviceDescription,jdbcType=VARCHAR},
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="isDeleted != null">
+                is_deleted = #{isDeleted,jdbcType=BIT},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy,jdbcType=BIGINT},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy,jdbcType=BIGINT},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+                device_description = #{deviceDescription,jdbcType=VARCHAR}
+            </if>
+                where device_id = #{deviceId,jdbcType=VARCHAR}
+        </set>
+
     </update>
 
 </mapper>

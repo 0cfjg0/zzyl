@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,7 +55,7 @@ public class DeviceServiceImpl implements DeviceService {
             RegisterDeviceResponseBody.RegisterDeviceResponseBodyData data = registResponse.getBody().getData();
             Device device = BeanUtil.toBean(deviceDto, Device.class);
             device.setDeviceName(data.getDeviceName());
-            device.setProductKey(data.getProductKey());
+            device.setProductId(data.getProductKey());
             device.setDeviceId(data.getIotId());
             device.setNoteName(data.getNickname());
 
@@ -171,7 +172,18 @@ public class DeviceServiceImpl implements DeviceService {
 
         //响应
         QueryDeviceInfoResponse queryDeviceInfoResponse = client.queryDeviceInfo(queryDeviceInfoRequest);
-        return BeanUtil.toBean(queryDeviceInfoResponse.getBody().getData(), DeviceVo.class);
+        QueryDeviceInfoResponseBody.QueryDeviceInfoResponseBodyData data = queryDeviceInfoResponse.getBody().getData();
+
+        //复制值
+        DeviceVo deviceVo = new DeviceVo();
+        BeanUtil.copyProperties(data, deviceVo, CopyOptions.create().ignoreNullValue());
+
+        List<String> list = new ArrayList<>(Arrays.asList(iotId));
+        DeviceVo vo = this.deviceMapper.selectByDeviceIds(list).get(0);
+
+        //复制值
+        BeanUtil.copyProperties(vo, deviceVo, CopyOptions.create().ignoreNullValue());
+        return deviceVo;
     }
 
     @Override
@@ -207,33 +219,39 @@ public class DeviceServiceImpl implements DeviceService {
     }
 
     @Override
-    @Transactional
     public void updateDevice(DeviceDto deviceDto) throws Exception {
         String deviceName = deviceDto.getDeviceName();
         String productKey = deviceDto.getProductKey();
         String nickName = deviceDto.getNickname();
         String IotId = deviceDto.getIotId();
 
+        List<String> iotIds = new ArrayList<>();
+        iotIds.add(IotId);
+
         //查询是否存在
+        if(this.deviceMapper.selectByDeviceIds(iotIds).size() == 0){
+            System.out.println("未找到需要修改的设备,尝试新增中");
+            //新增数据库
+            Device device = BeanUtil.toBean(deviceDto, Device.class);
+            device.setDeviceId(deviceDto.getIotId());
+            device.setProductId(productKey);
+            int count = this.deviceMapper.insert(device);
+            if (count == 0) {
+                throw new BaseException("数据库更新失败");
+            }
+        }
         QueryDeviceInfoRequest request = new QueryDeviceInfoRequest();
         request.setIotInstanceId(aliIoTConfigProperties.getIotInstanceId());
         request.setProductKey(productKey);
         request.setDeviceName(deviceName);
         request.setIotId(IotId);
         QueryDeviceInfoResponse res = client.queryDeviceInfo(request);
-        if (ObjectUtil.isEmpty(res)) {
+
+        if (ObjectUtil.isEmpty(res.getBody().getData())) {
             do {
                 System.out.println("未找到需要修改的设备,尝试新增中");
             }
             while (!this.registerDevice(deviceDto));
-            //新增数据库
-            Device device = BeanUtil.toBean(deviceDto, Device.class);
-            device.setDeviceId(deviceDto.getIotId());
-            int count = deviceMapper.insert(device);
-            if (count == 0) {
-                throw new BaseException("数据库更新失败");
-            }
-            return;
         }
 
         List<BatchUpdateDeviceNicknameRequest.BatchUpdateDeviceNicknameRequestDeviceNicknameInfo> list = new ArrayList<>();
@@ -258,8 +276,7 @@ public class DeviceServiceImpl implements DeviceService {
         //数据库更新
         Device device = BeanUtil.toBean(deviceDto, Device.class);
         device.setDeviceId(deviceDto.getIotId());
-        //todo 前端没传主键,改xml处理
-        int count = deviceMapper.updateByPrimaryKeySelective(device);
+        int count = deviceMapper.updateByDeviceKey(device);
         if (count == 0) {
             throw new BaseException("数据库更新失败");
         }
