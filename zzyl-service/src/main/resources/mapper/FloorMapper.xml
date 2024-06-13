@@ -119,4 +119,20 @@
                  left join bed b on b.room_id = r.id
     </select>
 
+    <select id="selectFloorByDevice" resultType="com.zzyl.vo.FloorVo">
+        SELECT f.*
+        FROM FLOOR f
+                 LEFT JOIN room r ON f.id = r.floor_id
+                 LEFT JOIN bed b ON b.room_id = r.id
+                 LEFT JOIN device d
+                           ON d.binding_location = r.id AND d.location_type = 1 AND d.physical_location_type = 1
+                 LEFT JOIN device dd
+                           ON dd.binding_location = b.id AND dd.location_type = 1 AND dd.physical_location_type = 2
+        WHERE (d.id IS NOT NULL OR dd.id IS NOT NULL)
+        GROUP BY f.id
+        ORDER BY f.code ASC
+    </select>
+
+
+
 </mapper>

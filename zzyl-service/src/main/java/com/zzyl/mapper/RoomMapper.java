@@ -4,6 +4,7 @@ import com.zzyl.entity.Room;
 import com.zzyl.vo.RoomVo;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,8 @@ public interface RoomMapper {
     List<RoomVo> selectByFloorIdWithNur(Long floorId);
 
     List<RoomVo> selectRoomsCheckedByFloorId(Long floorId);
+
+    List<RoomVo> selectByFloorIdWithDevice(@Param("floorId") Long floorId);
 }
 
 

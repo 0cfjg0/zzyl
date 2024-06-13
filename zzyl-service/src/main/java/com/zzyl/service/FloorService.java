@@ -4,6 +4,7 @@ package com.zzyl.service;
 
 import com.zzyl.dto.FloorDto;
 import com.zzyl.vo.FloorVo;
+import com.zzyl.vo.RoomVo;
 
 import java.util.List;
 
@@ -57,4 +58,9 @@ public interface FloorService {
      */
     List<FloorVo> selectAllByNur();
 
+    List<RoomVo> getDevicesByFloorId(Long floorId);
+
+    List<FloorVo> getAllFloorsWithDevice();
+
+//    List<FloorVo> selectAllByDevice();
 }

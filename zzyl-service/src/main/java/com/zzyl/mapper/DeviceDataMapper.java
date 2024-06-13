@@ -27,4 +27,7 @@ public interface DeviceDataMapper {
 
     int batchInsert(@Param("list") List<DeviceData> list);
 
+    List<DeviceData> selectByDeviceId(String deviceId);
+
+    List<DeviceData> selectByDeviceIdwithStatus(@Param("deviceId") String deviceId,@Param("status") Integer status);
 }

@@ -77,6 +77,9 @@
         and d.physical_location_type = #{type}
         group by d.id
     </select>
+    <select id="getDeviceIdByDeviceName" resultType="java.lang.String">
+        select device_id from device d where device_name = #{deviceName} limit 1;
+    </select>
 
     <update id="updateByPrimaryKeySelective" parameterType="com.zzyl.entity.Device">
         update device

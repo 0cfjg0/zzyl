@@ -23,4 +23,6 @@ public interface DeviceMapper {
     List<DeviceVo> selectByLocation(List<String> ids, int type);
 
     int updateByDeviceKey(Device record);
+
+    String getDeviceIdByDeviceName(@Param("deviceName") String deviceName);
 }

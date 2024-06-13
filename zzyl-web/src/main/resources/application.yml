@@ -107,7 +107,7 @@ zzyl:
   aliyun:
     accessKeyId: LTAI5tJFjM1hG2ELnC4yBbCi
     accessKeySecret: NSn7j8fnASsfs7RK1KZV8i5Mj6HxCc
-    consumerGroupId: DEFAULT_GROUP
+    consumerGroupId: i8F9hwZy4k3MLvpfGVb6000100
     #    consumerGroupId: 0CP9WrqP8Q1lLaWFjli9000100
     regionId: cn-shanghai
     iotInstanceId: iot-06z00a2f7y1p96k

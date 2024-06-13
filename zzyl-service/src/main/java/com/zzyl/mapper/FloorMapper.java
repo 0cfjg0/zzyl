@@ -2,7 +2,9 @@ package com.zzyl.mapper;
 
 import com.zzyl.entity.Floor;
 import com.zzyl.vo.FloorVo;
+import com.zzyl.vo.RoomVo;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -22,5 +24,8 @@ public interface FloorMapper {
     List<FloorVo> selectAllRoomAndBed();
 
     List<FloorVo> selectAllByNur();
-    List<FloorVo> selectAllByDevice();
+
+//    List<FloorVo> selectAllByDevice();
+
+    List<FloorVo> selectFloorByDevice();
 }

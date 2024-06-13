@@ -1,13 +1,17 @@
 package com.zzyl.entity;
 
 import com.zzyl.base.BaseEntity;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Builder
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DeviceData extends BaseEntity {
 
     /**

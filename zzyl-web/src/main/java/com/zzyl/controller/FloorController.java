@@ -4,6 +4,7 @@ import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.FloorDto;
 import com.zzyl.service.FloorService;
 import com.zzyl.vo.FloorVo;
+import com.zzyl.vo.RoomVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,5 +63,12 @@ public class FloorController extends BaseController {
     @ApiOperation(value = "获取所有楼层 （包含房间和床位）", notes = "无需参数，获取所有楼层，返回楼层信息列表")
     public ResponseResult<List<FloorVo>> getAllWithRoomAndBed() {
         return ResponseResult.success(floorService.getAllWithRoomAndBed());
+    }
+
+    //返回有智能设备的楼层
+    @GetMapping("/getAllFloorsWithDevice")
+    @ApiOperation("获取所有楼层 （智能楼层）")
+    public ResponseResult<List<FloorVo>> getAllFloorsWithDevice(){
+        return ResponseResult.success(floorService.getAllFloorsWithDevice());
     }
 }

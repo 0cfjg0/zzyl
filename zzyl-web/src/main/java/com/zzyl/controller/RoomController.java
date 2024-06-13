@@ -2,6 +2,7 @@ package com.zzyl.controller;
 
 import com.zzyl.base.ResponseResult;
 import com.zzyl.dto.RoomDto;
+import com.zzyl.service.FloorService;
 import com.zzyl.service.RoomService;
 import com.zzyl.vo.RoomVo;
 import io.swagger.annotations.Api;
@@ -17,6 +18,9 @@ import java.util.List;
 public class RoomController extends BaseController {
     @Autowired
     private RoomService roomService;
+
+    @Autowired
+    private FloorService floorService;
 
     @PostMapping("/add")
     @ApiOperation("添加房间")
@@ -65,5 +69,12 @@ public class RoomController extends BaseController {
     @ApiOperation("获取所有房间（负责老人）")
     public ResponseResult<List<RoomVo>> getRoomsWithNurByFloorId(@PathVariable Long floorId) {
         return ResponseResult.success(roomService.getRoomsWithNurByFloorId(floorId));
+    }
+
+    @GetMapping("/getRoomsWithDeviceByFloorId/{floorId}")
+    @ApiOperation(value = "获取楼层智能床位数据", notes = "获取楼层智能床位数据")
+    public ResponseResult<List<RoomVo>> getDevicesByFloor(@PathVariable Long floorId){
+        List<RoomVo> list = floorService.getDevicesByFloorId(floorId);
+        return ResponseResult.success(list);
     }
 }

@@ -1,6 +1,17 @@
 package com.zzyl.job;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.convert.Convert;
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
+import com.zzyl.constant.Constants;
+import com.zzyl.entity.DeviceData;
+import com.zzyl.mapper.DeviceDataMapper;
+import com.zzyl.mapper.DeviceMapper;
 import com.zzyl.properties.AliIoTConfigProperties;
+import com.zzyl.vo.DeviceVo;
+import io.reactivex.Single;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionListener;
@@ -9,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -20,12 +33,14 @@ import javax.naming.InitialContext;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
-//@Component
+@Component
 public class AmqpClient implements ApplicationRunner {
     private final static Logger logger = LoggerFactory.getLogger(AmqpClient.class);
 
@@ -33,6 +48,12 @@ public class AmqpClient implements ApplicationRunner {
     private AliIoTConfigProperties aliIoTConfigProperties;
     @Resource
     private ExecutorService executorService;
+    @Resource
+    private DeviceDataMapper deviceDataMapper;
+    @Resource
+    private DeviceMapper deviceMapper;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     //控制台服务端订阅中消费组状态页客户端ID一栏将显示clientId参数。
     //建议使用机器UUID、MAC地址、IP等唯一标识等作为clientId。便于您区分识别不同的客户端。
@@ -123,7 +144,36 @@ public class AmqpClient implements ApplicationRunner {
                     + ",\n messageId = " + messageId
                     + ",\n content = " + content);
 
-            //TODO 待实现
+            //解析JSON数据
+            Content data = JSONUtil.toBean(content, Content.class);
+            String deviceId = data.getIotId();
+            //查到对应的属性
+            List<DeviceVo> deviceVos = this.deviceMapper.selectByDeviceIds(new ArrayList<>(Collections.singletonList(deviceId)));
+            List<DeviceData> list = new ArrayList<>();
+            if(deviceVos.size() != 0){
+                DeviceVo deviceVo = deviceVos.get(0);
+                for (String i : data.getItems().keySet()) {
+                    DeviceData deviceData = DeviceData.builder().build();
+                    //复制属性
+                    BeanUtil.copyProperties(deviceVo, deviceData, CopyOptions.create().ignoreNullValue());
+                    deviceData.setFunctionName(i);
+                    deviceData.setDataValue(Convert.toStr(data.getItems().get(i).getValue()));
+                    Instant instant = Instant.ofEpochMilli(data.getItems().get(i).getTime());
+                    LocalDateTime ldt = LocalDateTime.ofInstant(instant,ZoneId.systemDefault());
+                    deviceData.setProcessingTime(ldt);
+                    deviceData.setStatus("0");
+                    deviceData.setIotId(deviceVo.getDeviceId());
+                    deviceData.setAccessLocation(deviceVo.getRemark());
+                    list.add(deviceData);
+                }
+                String redisData = JSONUtil.toJsonStr(list);
+                stringRedisTemplate.opsForHash().put(Constants.DEVICE_LASTDATA_CACHE_KEY,deviceVo.getDeviceId(),redisData);
+            }
+            //数据库插入
+            this.deviceDataMapper.batchInsert(list);
+
+
+
         } catch (Exception e) {
             logger.error("processMessage occurs error ", e);
         }

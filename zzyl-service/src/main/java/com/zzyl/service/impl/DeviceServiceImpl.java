@@ -3,28 +3,45 @@ package com.zzyl.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.collection.CollStreamUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.aliyun.iot20180120.Client;
 import com.aliyun.iot20180120.models.*;
+import com.github.pagehelper.PageHelper;
 import com.zzyl.base.PageResponse;
+import com.zzyl.constant.Constants;
 import com.zzyl.dto.DeviceDto;
 import com.zzyl.entity.Device;
+import com.zzyl.entity.DeviceData;
 import com.zzyl.exception.BaseException;
+import com.zzyl.mapper.DeviceDataMapper;
 import com.zzyl.mapper.DeviceMapper;
 import com.zzyl.properties.AliIoTConfigProperties;
 import com.zzyl.service.DeviceService;
+import com.zzyl.vo.DeviceDataVo;
 import com.zzyl.vo.DeviceVo;
+import io.swagger.models.auth.In;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +56,11 @@ public class DeviceServiceImpl implements DeviceService {
     @Resource
     private Client client;
 
+    @Resource
+    StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private DeviceDataMapper deviceDataMapper;
 
     @Override
     @Transactional
@@ -178,7 +200,7 @@ public class DeviceServiceImpl implements DeviceService {
         DeviceVo deviceVo = new DeviceVo();
         BeanUtil.copyProperties(data, deviceVo, CopyOptions.create().ignoreNullValue());
 
-        List<String> list = new ArrayList<>(Arrays.asList(iotId));
+        List<String> list = new ArrayList<>(Collections.singletonList(iotId));
         DeviceVo vo = this.deviceMapper.selectByDeviceIds(list).get(0);
 
         //复制值
@@ -229,7 +251,7 @@ public class DeviceServiceImpl implements DeviceService {
         iotIds.add(IotId);
 
         //查询是否存在
-        if(this.deviceMapper.selectByDeviceIds(iotIds).size() == 0){
+        if (this.deviceMapper.selectByDeviceIds(iotIds).size() == 0) {
             System.out.println("未找到需要修改的设备,尝试新增中");
             //新增数据库
             Device device = BeanUtil.toBean(deviceDto, Device.class);
@@ -308,6 +330,123 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("数据库更新失败");
         }
         return;
+    }
+
+    @Override
+    public PageResponse<DeviceData> queryByDays(
+            Integer pageNum,
+            Integer pageSize,
+            String deviceName,
+            Integer status,
+            String functionId,
+            Long startTime,
+            Long endTime
+    ) {
+        Instant start = Instant.ofEpochMilli(startTime);
+        Instant end = Instant.ofEpochMilli(endTime);
+        LocalDateTime startldt = LocalDateTime.ofInstant(start, ZoneId.systemDefault());
+        LocalDateTime endldt = LocalDateTime.ofInstant(end, ZoneId.systemDefault());
+
+        //传入deviceName,获取deviceId
+        String deviceId = deviceMapper.getDeviceIdByDeviceName(deviceName);
+
+        //从redis中获取JSON数据(错误)
+//        String data = Convert.toStr(stringRedisTemplate.opsForHash().get(Constants.DEVICE_LASTDATA_CACHE_KEY, deviceId));
+
+        //解析
+//        JSONArray objects = JSONUtil.parseArray(data);
+
+        //从数据库中查询deviceData记录
+        List<DeviceData> temp;
+        if (ObjectUtil.isEmpty(status)) {
+            temp = deviceDataMapper.selectByDeviceId(deviceId);
+        } else {
+            temp = deviceDataMapper.selectByDeviceIdwithStatus(deviceId,status);
+        }
+
+        //过滤条件
+        List<DeviceData> res = temp.stream()
+                .map(item -> BeanUtil.toBean(item, DeviceData.class))
+                .filter(item -> item.createTime.isAfter(startldt))
+                .filter(item -> item.createTime.isBefore(endldt))
+                .filter(item -> item.getFunctionName().equals(functionId))
+                .collect(Collectors.toList());
+
+        Long count = Convert.toLong(res.size());
+        Long pages = Convert.toLong(count / pageNum + 1);
+
+        return PageResponse.of(
+                res,
+                pageNum,
+                pageSize,
+                pages,
+                count
+        );
+    }
+
+    @Override
+    public PageResponse<DeviceDataVo> queryByWeeks(Integer pageNum,
+                                                 Integer pageSize,
+                                                 String deviceName,
+                                                 Integer status,
+                                                 String functionId,
+                                                 Long startTime,
+                                                 Long endTime
+    ) {
+        Instant start = Instant.ofEpochMilli(startTime);
+        Instant end = Instant.ofEpochMilli(endTime);
+        LocalDateTime startldt = LocalDateTime.ofInstant(start, ZoneId.systemDefault());
+        LocalDateTime endldt = LocalDateTime.ofInstant(end, ZoneId.systemDefault());
+
+        //传入deviceName,获取deviceId
+        String deviceId = deviceMapper.getDeviceIdByDeviceName(deviceName);
+
+        //从数据库中查询deviceData记录
+        List<DeviceData> temp;
+        if (ObjectUtil.isEmpty(status)) {
+            temp = deviceDataMapper.selectByDeviceId(deviceId);
+        } else {
+            temp = deviceDataMapper.selectByDeviceIdwithStatus(deviceId,status);
+        }
+
+        //过滤
+        List<DeviceDataVo> res = new ArrayList<>();
+        LocalDateTime time = startldt;
+        while (time.isBefore(endldt)){
+            DeviceDataVo tempVo = new DeviceDataVo();
+            LocalDateTime finalTime = time;
+            LocalDateTime finalEndTime = finalTime.plusDays(1);
+            List<DeviceData> list = temp.stream()
+                                        .filter(item->item.createTime.isAfter(finalTime))
+                                        .filter(item->item.createTime.isBefore(finalEndTime))
+                                        .filter(item -> item.getFunctionName().equals(functionId))
+                                        .collect(Collectors.toList());
+            long sum = 0;
+            for (DeviceData deviceData : list) {
+                sum += Convert.toLong(deviceData.getDataValue());
+            }
+            BigDecimal avg = null;
+            try {
+                avg = BigDecimal.valueOf(sum).divide(BigDecimal.valueOf(list.size()),14,RoundingMode.HALF_UP);
+            } catch (ArithmeticException e) {
+                avg = BigDecimal.valueOf(0);
+            }
+            tempVo.setData(time.format(DateTimeFormatter.ofPattern("MM月dd日")));
+            tempVo.setDataValue(Convert.toStr(avg.doubleValue()));
+            res.add(tempVo);
+            time = time.plusDays(1);
+        }
+
+        Long count = Convert.toLong(res.size());
+        Long pages = Convert.toLong(count / pageNum + 1);
+
+        return PageResponse.of(
+                res,
+                pageNum,
+                pageSize,
+                pages,
+                count
+        );
     }
 
 

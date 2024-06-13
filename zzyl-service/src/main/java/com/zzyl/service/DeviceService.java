@@ -6,7 +6,10 @@ import com.aliyun.iot20180120.models.QueryDeviceRequest;
 import com.aliyun.iot20180120.models.QueryThingModelPublishedResponseBody;
 import com.zzyl.base.PageResponse;
 import com.zzyl.dto.DeviceDto;
+import com.zzyl.entity.DeviceData;
+import com.zzyl.vo.DeviceDataVo;
 import com.zzyl.vo.DeviceVo;
+import org.springframework.web.bind.annotation.RequestParam;
 
 public interface DeviceService {
 
@@ -30,4 +33,23 @@ public interface DeviceService {
     void updateDevice(DeviceDto deviceDto) throws Exception;
 
     void deleteDevice(DeviceDto deviceDto) throws Exception;
+
+    PageResponse<DeviceData> queryByDays(
+            Integer pageNum,
+            Integer pageSize,
+            String deviceName,
+            Integer status,
+            String functionId,
+            Long startTime,
+            Long endTime
+    );
+
+    PageResponse<DeviceDataVo> queryByWeeks(Integer pageNum,
+                                          Integer pageSize,
+                                          String deviceName,
+                                          Integer status,
+                                          String functionId,
+                                          Long startTime,
+                                          Long endTime
+    );
 }

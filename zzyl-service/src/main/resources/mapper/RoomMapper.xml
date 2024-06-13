@@ -250,4 +250,40 @@
         order by r.sort, r.create_time desc
 
     </select>
+
+    <select id="selectByFloorIdWithDevice" resultMap="roomVoWithDeviceResultMap">
+        SELECT r.*,
+               b.id               bid,
+               b.bed_number,
+               b.sort,
+               b.bed_status,
+               b.room_id,
+               b.create_by,
+               b.update_by,
+               b.remark,
+               b.create_time,
+               b.update_time,
+               e.name             ename,
+               e.id               eid,
+               d.id            as r_did,
+               d.device_id,
+               d.product_id    as product_key,
+               d.device_name,
+               d.produce_name,
+               dd.id           as b_did,
+               dd.device_id       b_device_id,
+               dd.product_id   as b_product_key,
+               dd.device_name  as b_device_name,
+               dd.produce_name as b_produce_name
+        FROM room r
+                 LEFT JOIN bed b ON b.room_id = r.id
+                 LEFT JOIN elder e ON e.bed_id = b.id
+                 LEFT JOIN device d
+                           ON d.binding_location = r.id AND d.location_type = 1 AND d.physical_location_type = 1
+                 LEFT JOIN device dd
+                           ON dd.binding_location = b.id AND dd.location_type = 1 AND dd.physical_location_type = 2
+        WHERE r.floor_id = #{floorId}
+          AND (d.id IS NOT NULL OR dd.id IS NOT NULL)
+        ORDER BY r.sort, r.create_time DESC
+    </select>
 </mapper>
