@@ -30,4 +30,7 @@ public interface DeviceDataMapper {
     List<DeviceData> selectByDeviceId(String deviceId);
 
     List<DeviceData> selectByDeviceIdwithStatus(@Param("deviceId") String deviceId,@Param("status") Integer status);
+
+    @Delete("delete from device_data where status != 2 and alarm_time < #{dateTime}")
+    void clearDeviceDataJob(@Param("dateTime") LocalDateTime localDateTime);
 }

@@ -25,4 +25,6 @@ public interface DeviceMapper {
     int updateByDeviceKey(Device record);
 
     String getDeviceIdByDeviceName(@Param("deviceName") String deviceName);
+
+    Device selectByDeviceId(String deviceId);
 }

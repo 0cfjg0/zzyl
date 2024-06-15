@@ -100,6 +100,31 @@
         and product_id = #{productKey,jdbcType=VARCHAR}
         and status = 1
     </select>
+    <select id="selectByAlertRuleName" resultType="com.zzyl.entity.AlertRule">
+        select * from alert_rule where alertRuleName = #{alertRuleName} limit 1;
+    </select>
+    <select id="selectAlertRulePage" resultType="com.zzyl.entity.AlertRule">
+        select * from alert_rule
+                <where>
+                    <if test="alertRuleName != null">
+                        alert_rule_name = #{alertRuleName},
+                    </if>
+                    <if test="functionName != null">
+                        function_name = #{functionName},
+                    </if>
+                    <if test="productKey != null">
+                        product_id = #{productKey}
+                    </if>
+                </where>
+    </select>
+    <select id="selectByFunctionName" resultType="com.zzyl.entity.AlertRule">
+        select
+        <include refid="Base_Column_List"/>
+        from alert_rule
+        where function_name = #{functionId,jdbcType=VARCHAR}
+        and related_device = #{deviceId,jdbcType=VARCHAR}
+        and iot_id = #{productKey,jdbcType=VARCHAR}
+    </select>
 
     <update id="updateByPrimaryKeySelective" parameterType="com.zzyl.entity.AlertRule">
         update alert_rule

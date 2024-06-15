@@ -3,14 +3,20 @@ package com.zzyl.job;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.convert.Convert;
+import cn.hutool.core.stream.StreamUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import com.zzyl.constant.Constants;
+import com.zzyl.entity.Device;
 import com.zzyl.entity.DeviceData;
 import com.zzyl.mapper.DeviceDataMapper;
 import com.zzyl.mapper.DeviceMapper;
 import com.zzyl.properties.AliIoTConfigProperties;
+import com.zzyl.service.AlertRuleService;
 import com.zzyl.vo.DeviceVo;
+import com.zzyl.websocket.WebSocketServer;
 import io.reactivex.Single;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.qpid.jms.JmsConnection;
@@ -54,6 +60,10 @@ public class AmqpClient implements ApplicationRunner {
     private DeviceMapper deviceMapper;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private AlertRuleService alertRuleService;
+    @Resource
+    private WebSocketServer webSocketServer;
 
     //控制台服务端订阅中消费组状态页客户端ID一栏将显示clientId参数。
     //建议使用机器UUID、MAC地址、IP等唯一标识等作为clientId。便于您区分识别不同的客户端。
@@ -160,21 +170,36 @@ public class AmqpClient implements ApplicationRunner {
                     deviceData.setDataValue(Convert.toStr(data.getItems().get(i).getValue()));
                     Instant instant = Instant.ofEpochMilli(data.getItems().get(i).getTime());
                     LocalDateTime ldt = LocalDateTime.ofInstant(instant,ZoneId.systemDefault());
-                    deviceData.setProcessingTime(ldt);
+                    deviceData.setAlarmTime(ldt);
                     deviceData.setStatus("0");
                     deviceData.setIotId(deviceVo.getDeviceId());
                     deviceData.setAccessLocation(deviceVo.getRemark());
+                    deviceData.setProductId(data.getProductKey());
                     list.add(deviceData);
                 }
                 String redisData = JSONUtil.toJsonStr(list);
                 stringRedisTemplate.opsForHash().put(Constants.DEVICE_LASTDATA_CACHE_KEY,deviceVo.getDeviceId(),redisData);
             }
+            //过滤异常数据
+            alertRuleService.alertFilter(list);
+
+            //检测是否存在报警状态的数据，如果存在向客户端发消息
+            for (DeviceData deviceData : list) {
+                if(deviceData.getStatus().equals("2")){
+                    Device device = deviceMapper.selectByDeviceId(deviceData.getIotId());
+                    if(device.getLocationType().equals(1)){
+                        String floorId = StrUtil.subBefore(device.getDeviceDescription(), ",", false);
+                        webSocketServer.sendToAllClient(floorId);
+                    }
+                }
+            }
+
             //数据库插入
             this.deviceDataMapper.batchInsert(list);
 
 
-
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             logger.error("processMessage occurs error ", e);
         }
     }

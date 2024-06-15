@@ -41,7 +41,7 @@
     </select>
 
     <select id="selectByDeviceIdwithStatus" resultType="com.zzyl.entity.DeviceData">
-        select * from device_data where iot_id = #{deviceId} and status = #{status};
+        select * from device_data where iot_id = #{deviceId} and status >= 2;
     </select>
 
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">

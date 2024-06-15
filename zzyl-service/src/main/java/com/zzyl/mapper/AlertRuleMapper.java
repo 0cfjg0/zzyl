@@ -5,6 +5,7 @@ import com.zzyl.entity.AlertRule;
 import com.zzyl.vo.AlertRuleVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface AlertRuleMapper {
 
     List<AlertRule> selectByFunctionId(@Param("functionId") String functionId, @Param("deviceId") String deviceId, @Param("productKey")String productKey);
 
+    List<AlertRule> selectByFunctionName(@Param("functionName") String functionName, @Param("deviceId") String deviceId, @Param("productKey")String productKey);
+
     int updateByPrimaryKeySelective(AlertRule record);
 
     Page<AlertRuleVo> page(@Param("alertRuleName")String alertRuleName, @Param("productId")String productId, @Param("functionName")String functionName);
@@ -29,4 +32,8 @@ public interface AlertRuleMapper {
      * @param status 状态，0：禁用，1：启用
      */
     void updateStatus(@Param("id") Long id, @Param("status") Integer status);
+
+    AlertRule selectByAlertRuleName(String alertRuleName);
+
+    Page<AlertRule> selectAlertRulePage(@Param("alertRuleName") String alertRuleName,@Param("functionName") String functionName,@Param("productKey") String productKey);
 }
